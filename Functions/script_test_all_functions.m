@@ -41,7 +41,7 @@ clc;
 
 %% Define the repo name and output file
 % repoShortName = '_MapGen_';
-repoShortName = '_Laps_';
+repoShortName = '_LoadRoster_';
 
 outputFile = cat(2,'script_test_fcn',repoShortName,'all_stdout.txt');
 diary(fullfile(pwd,outputFile));
