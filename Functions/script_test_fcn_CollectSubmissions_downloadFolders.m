@@ -48,6 +48,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
+syncTime = datetime('now');
 
 % Call the function
 [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
@@ -135,6 +136,7 @@ figure(figNum); close(figNum);
 rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
+syncTime = datetime('now');
 
 % Call the function
 [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
@@ -178,6 +180,7 @@ figure(figNum); close(figNum);
 rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
+syncTime = datetime('now');
 
 % Call the function
 [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
@@ -222,6 +225,7 @@ close(figNum);
 rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
+syncTime = datetime('now');
 
 Niterations = 1;
 

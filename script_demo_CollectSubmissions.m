@@ -252,9 +252,10 @@ rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
+syncTime = datetime('now');
 
 [fileContent, ~, ~, timeString, ~] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, (-1));
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
 
 subFolder = [];
 flagArchiveEqualFiles = [];
@@ -262,7 +263,7 @@ flagArchiveEqualFiles = [];
 
 %%%%%%%%%%
 % Call the function
-[totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
+totalsCollected = ...
     fcn_CollectSubmissions_archiveChanges(...
     fileContent, localFolder, archiveFolder, timeString, ...
     (subFolder), (flagArchiveEqualFiles), (figNum));
@@ -270,18 +271,18 @@ flagArchiveEqualFiles = [];
 % sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(isnumeric(totalSame));
-assert(isnumeric(totalAdded));
-assert(isnumeric(totalDeleted));
-assert(isnumeric(totalModified));
-assert(isnumeric(totalErrored));
+assert(isnumeric(totalsCollected.totalSame));
+assert(isnumeric(totalsCollected.totalAdded));
+assert(isnumeric(totalsCollected.totalDeleted));
+assert(isnumeric(totalsCollected.totalModified));
+assert(isnumeric(totalsCollected.totalErrored));
 
 % Check variable sizes
-assert(isequal(size(totalSame),[1 1]));
-assert(isequal(size(totalAdded),[1 1]));
-assert(isequal(size(totalDeleted),[1 1]));
-assert(isequal(size(totalModified),[1 1]));
-assert(isequal(size(totalErrored),[1 1]));
+assert(isequal(size(totalsCollected.totalSame),[1 1]));
+assert(isequal(size(totalsCollected.totalAdded),[1 1]));
+assert(isequal(size(totalsCollected.totalDeleted),[1 1]));
+assert(isequal(size(totalsCollected.totalModified),[1 1]));
+assert(isequal(size(totalsCollected.totalErrored),[1 1]));
 
 % % Check variable values
 % % Are the laps starting at expected points?

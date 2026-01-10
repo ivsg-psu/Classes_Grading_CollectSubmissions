@@ -1,4 +1,4 @@
-function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
+function totalsCollected = ...
     fcn_CollectSubmissions_archiveChanges(fileContent, localFolder, archiveFolder, timeString, varargin)
 
 %% fcn_CollectSubmissions_archiveChanges
@@ -7,7 +7,7 @@ function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ..
 %
 % FORMAT:
 %
-%      [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
+%      totalsCollected = ...
 %      fcn_CollectSubmissions_archiveChanges(...
 %      fileContent, localFolder, archiveFolder, timeString, ...
 %      (subFolder), (flagArchiveEqualFiles) (figNum));
@@ -56,9 +56,20 @@ function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ..
 %
 % OUTPUTS:
 %
-%      totalSame, totalAdded, totalDeleted, totalModified, totalErrored:
-%      the totals for each of the archive operations (equality, addition,
-%      deletion, modification, or errors)
+%      totalsCollected: a structure containing totals of results, with following subfields
+%      
+%           totalSame, 
+%           
+%           totalAdded, 
+% 
+%           totalDeleted, 
+% 
+%           totalModified, 
+% 
+%           totalErrored
+%
+%      these are the totals for each of the archive outcomes of equality,
+%      addition, deletion, modification, and errors
 %
 % DEPENDENCIES:
 %
@@ -246,6 +257,13 @@ for ith_change = 1:length(fileContent)
     end % Ends check for empty character
 end
 
+totalsCollected.totalSame     = totalSame;
+totalsCollected.totalDeleted  = totalDeleted;
+totalsCollected.totalAdded    = totalAdded;
+totalsCollected.totalModified = totalModified;
+totalsCollected.totalErrored  = totalErrored;
+
+
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   _____       _
@@ -258,11 +276,11 @@ end
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-    fprintf(1,'totalSame:     %.0f\n', totalSame);
-    fprintf(1,'totalAdded:    %.0f\n', totalAdded);
-    fprintf(1,'totalDeleted:  %.0f\n', totalDeleted);
-    fprintf(1,'totalModified: %.0f\n', totalModified);
-    fprintf(1,'totalErrored:  %.0f\n', totalErrored);
+    fprintf(1,'totalSame:     %.0f\n', totalsCollected.totalSame);
+    fprintf(1,'totalAdded:    %.0f\n', totalsCollected.totalAdded);
+    fprintf(1,'totalDeleted:  %.0f\n', totalsCollected.totalDeleted);
+    fprintf(1,'totalModified: %.0f\n', totalsCollected.totalModified);
+    fprintf(1,'totalErrored:  %.0f\n', totalsCollected.totalErrored);
 
     %  disp(rosterTable);
     % % plot the final XY result

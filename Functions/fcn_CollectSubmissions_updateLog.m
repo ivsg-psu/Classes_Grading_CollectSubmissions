@@ -1,54 +1,45 @@
-function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
-    fcn_CollectSubmissions_updateLog(fileContent, localFolder, archiveFolder, timeString, varargin)
+function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, flagWasSuccessful, subFolder, totalsCollected, varargin)
 
-%% fcn_CollectSubmissions_archiveChanges
-%     fcn_CollectSubmissions_archiveChanges processes the changes and saved
-%     archival logs of the changes into an archival directory
+%% fcn_CollectSubmissions_updateLog
+%     fcn_CollectSubmissions_updateLog updates a log file so that changes
+%     in algorithm behavior can be tracked.
 %
 % FORMAT:
 %
-%      [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
-%      fcn_CollectSubmissions_archiveChanges(...
-%      fileContent, localFolder, archiveFolder, timeString, ...
-%      (subFolder), (flagArchiveEqualFiles) (figNum));
+%      fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, flagWasSuccessful, totalsCollected,(figNum));
 %
 %
 % INPUTS:
 %
-%      fileContent: an array of strings, one for each file transfer, that
-%      lists the type of change for each file. This result is automatically
-%      populated from rclone, and the designators have the following
-%      meaning (see: https://rclone.org/commands/rclone_sync/)
+%      logFile: a string containing the path to the file used for logging
 %
-%           = path means path was found in source and destination and was
-%           identical (no change)
+%      syncTime: the time at which the synchronization started
+%      obtained via: datetime('now')
 %
-%           - path means path was missing on the source, so only in the
-%           destination (deletion in destination)
+%      processDuration: the duration, in seconds, that it took to
+%      synchronize cloud to local
 %
-%           + path means path was missing on the destination, so only in
-%           the source (addition in destination)
-%
-%           * path means path was present in source and destination but
-%           different. (modification in destination)
-%
-%           ! path means there was an error reading or hashing the source
-%           or dest. (error in transfer)
-%
-%      localFolder: a string containing the path to the folder on the
-%      local computer where the data should be copied to
-%
-%      archiveFolder: a string containing the path to the folder on the
-%      local computer where the archives should be copied to
-%
-%      (OPTIONAL INPUTS)
+%      flagWasSuccessful: returns 1 if function completed without errors
 %
 %      subFolder: a string designating which selected folders should ONLY
 %      be updated (default is '', which includes all updates).
 %
-%      flagArchiveEqualFiles: if set to 1 or true, synchronization
-%      processes that have no updates (e.g., files are equal on cloud and
-%      local) are logged. Default is 0, to not log these.
+%      totalsCollected: a structure containing totals of results, with following subfields
+%      
+%           totalSame, 
+%           
+%           totalAdded, 
+% 
+%           totalDeleted, 
+% 
+%           totalModified, 
+% 
+%           totalErrored
+%
+%      these are the totals for each of the archive outcomes of equality,
+%      addition, deletion, modification, and errors
+%
+%      (OPTIONAL INPUTS)
 %
 %      figNum: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
@@ -56,9 +47,7 @@ function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ..
 %
 % OUTPUTS:
 %
-%      totalSame, totalAdded, totalDeleted, totalModified, totalErrored:
-%      the totals for each of the archive operations (equality, addition,
-%      deletion, modification, or errors)
+%      (none - the function writes to file)
 %
 % DEPENDENCIES:
 %
@@ -66,7 +55,7 @@ function [totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ..
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_CollectSubmissions_archiveChanges
+%     See the script: script_test_fcn_CollectSubmissions_updateLog
 %     for a full test suite.
 %
 % This function was written on 2026_01_09 by S. Brennan
@@ -132,47 +121,49 @@ end
 if 0==flag_max_speed
     if flag_check_inputs
         % Are there the right number of inputs?
-        narginchk(4,MAX_NARGIN);
+        narginchk(6,MAX_NARGIN);
 
-        % Check the fileContent to be sure it is a string
-        fcn_DebugTools_checkInputsToFunctions(fileContent, '_of_strings');
+        % Check the logFile to be sure it is a string or char
+        fcn_DebugTools_checkInputsToFunctions(logFile, '_of_char_strings');
 
-        % Check the localFolder to be sure it is a text style and a folder
-        fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
-        fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
+        % Make sure syncTime is a datetime type
+        assert(isdatetime(syncTime));
 
-        % Check the archiveFolder to be sure it is a text style and a folder
-        fcn_DebugTools_checkInputsToFunctions(archiveFolder, '_of_char_strings');
-        fcn_DebugTools_checkInputsToFunctions(archiveFolder, 'DoesDirectoryExist');
+        % Check the processDuration to be sure it is numeric
+        fcn_DebugTools_checkInputsToFunctions(processDuration, 'strictlypositive_1column_of_numbers');
 
-        % Check the timeString to be sure it is a text style
-        fcn_DebugTools_checkInputsToFunctions(timeString, '_of_char_strings');
+        assert(islogical(flagWasSuccessful));
+
+        % Check the subFolder to be sure it is a string or char
+        fcn_DebugTools_checkInputsToFunctions(subFolder, '_of_char_strings');        
+
+        assert(isstruct(totalsCollected));
 
     end
 end
 
 
-% The following area checks for variable argument inputs (varargin)
-
-% Does the user want to specify the subFolder input?
-% Set defaults first:
-subFolder = '';
-if 5 <= nargin
-    temp = varargin{1};
-    if ~isempty(temp)
-        subFolder = temp;
-    end
-end
-
-% Does the user want to specify flagArchiveEqualFiles input?
-flagArchiveEqualFiles = 0; % Default case
-if 6 <= nargin
-    temp = varargin{2};
-    if ~isempty(temp)
-        % Set the flagArchiveEqualFiles values
-        flagArchiveEqualFiles = temp;
-    end
-end
+% % The following area checks for variable argument inputs (varargin)
+% 
+% % Does the user want to specify the subFolder input?
+% % Set defaults first:
+% subFolder = '';
+% if 5 <= nargin
+%     temp = varargin{1};
+%     if ~isempty(temp)
+%         subFolder = temp;
+%     end
+% end
+% 
+% % Does the user want to specify flagArchiveEqualFiles input?
+% flagArchiveEqualFiles = 0; % Default case
+% if 6 <= nargin
+%     temp = varargin{2};
+%     if ~isempty(temp)
+%         % Set the flagArchiveEqualFiles values
+%         flagArchiveEqualFiles = temp;
+%     end
+% end
 
 % Does user want to show the plots?
 flag_do_plots = 0; % Default is to NOT show plots
@@ -196,55 +187,27 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Initialize counts
-totalSame = 0;
-totalAdded = 0;
-totalDeleted = 0;
-totalModified = 0;
-totalErrored = 0;
+timeString = fcn_DebugTools_time2String( syncTime, (-1));
+posixTimeString = sprintf('%9.2f',posixtime(syncTime));
+processDurationString = sprintf('%.2f',processDuration);
+prettyTimeString = sprintf('%s',syncTime);
+flagWasSuccessfulString = sprintf('%.0f',flagWasSuccessful);
 
-for ith_change = 1:length(fileContent)
-    thisChange = fileContent(ith_change);
-    thisChangeChar = char(thisChange);
-    if ~isempty(thisChangeChar)
-        if length(thisChangeChar)>2 && contains(thisChangeChar,subFolder)
-            changeToProcess = thisChangeChar(3:end);
-            switch thisChangeChar(1)
-                case '='
-                    totalSame = totalSame+1;
-                    % No change in file
-                    if flagArchiveEqualFiles
-                        suffixString = cat(2,timeString,'_eq');
-                        fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
-                    end
-                case '-'
-                    % Removal of file
-                    totalDeleted = totalDeleted+1;
-                    suffixString = cat(2,timeString,'_rem');
-                    fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
-                case '+'
-                    % Addition of file
-                    totalAdded = totalAdded+1;
-                    suffixString = cat(2,timeString,'_add');
-                    fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
-                case '*'
-                    % Modification of file
-                    totalModified = totalModified+1;
-                    suffixString = cat(2,timeString,'_mod');
-                    fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
-                case '!'
-                    % Error in file
-                    totalErrored = totalErrored+1;
-                    suffixString = cat(2,timeString,'_err');
-                    fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
-                case ' '
-                    % Do nothing
-                otherwise
-                    error('Unrecognized character found: %s', thisChangeChar(1));
-            end % Ends switch statement
-        end % Ends if check to make sure thisChangeChar is 3 or more chars
-    end % Ends check for empty character
-end
+line_of_data = sprintf('%s,  %s, %s, %s, %s, %s, %.0f, %.0f, %.0f, %.0f, %.0f', ...
+    timeString, ...
+    posixTimeString, ...
+    prettyTimeString, ...
+    processDurationString, ...
+    flagWasSuccessfulString, ...
+    subFolder, ... 
+    totalsCollected.totalSame, ...
+    totalsCollected.totalAdded, ...
+    totalsCollected.totalDeleted, ...
+    totalsCollected.totalModified, ...
+    totalsCollected.totalErrored ...
+    );
+
+writelines(line_of_data, logFile, WriteMode="append")
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,12 +221,8 @@ end
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-    fprintf(1,'totalSame:     %.0f\n', totalSame);
-    fprintf(1,'totalAdded:    %.0f\n', totalAdded);
-    fprintf(1,'totalDeleted:  %.0f\n', totalDeleted);
-    fprintf(1,'totalModified: %.0f\n', totalModified);
-    fprintf(1,'totalErrored:  %.0f\n', totalErrored);
-
+    fprintf(1,'File line result: \n\t%s\n', line_of_data);
+ 
     %  disp(rosterTable);
     % % plot the final XY result
     % figure(figNum);
