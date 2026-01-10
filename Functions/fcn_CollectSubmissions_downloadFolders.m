@@ -1,16 +1,29 @@
-function rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, varargin)
-%% fcn_LoadRoster_rosterTableFromCSV
-%     fcn_LoadRoster_rosterTableFromCSV loads a roster from a given path
-%     and converts it into a MATLAB table
+function [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+    fcn_CollectSubmissions_downloadFolders(...
+    rcloneFolder, cloudFolder, localFolder, syncTime, varargin)
+%% fcn_CollectSubmissions_downloadFolders
+%     fcn_CollectSubmissions_downloadFolders downloads folders from the
+%     cloud to the local computer.
 %
 % FORMAT:
 %
-%      rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (figNum));
+%      [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration]  = ...
+%      fcn_CollectSubmissions_downloadFolders(...
+%      rcloneFolder, cloudFolder, localFolder, syncTime, (figNum));
 %
 % INPUTS:
 %
-%      CSVPath: a string or character array that denotes the path to the
-%      CSV file
+%      rcloneFolder: a string containing the path to the folder on the
+%      local computer where rclone is installed
+%
+%      cloudFolder: a string containing the path to the folder on the
+%      cloud resource where data should be copied from
+%
+%      localFolder: a string containing the path to the folder on the
+%      local computer where the data should be copied to
+%
+%      syncTime: the time at which the synchronization started
+%      obtained via: datetime('now')
 %
 %      (OPTIONAL INPUTS)
 %
@@ -20,7 +33,35 @@ function rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, varargin)
 %
 % OUTPUTS:
 %
-%      rosterTable: a table representing the class roster
+%      fileContent: an array of strings, one for each file transfer, that
+%      lists the type of change for each file. This result is automatically
+%      populated from rclone, and the designators have the following
+%      meaning (see: https://rclone.org/commands/rclone_sync/)
+%
+%           = path means path was found in source and destination and was
+%           identical (no change)
+%
+%           - path means path was missing on the source, so only in the
+%           destination (deletion in destination)
+%
+%           + path means path was missing on the destination, so only in
+%           the source (addition in destination)
+%
+%           * path means path was present in source and destination but
+%           different. (modification in destination)
+%
+%           ! path means there was an error reading or hashing the source
+%           or dest. (error in transfer)
+% 
+%      flagWasSuccessful: returns 1 if function completed without errors
+%
+%      errorMsg: if not successful, the error message causing failure
+%
+%      timeString: a string of the format YYYYMMDD_HHMMSS that captures the
+%      time at which the synchronization was started.
+%
+%      processDuration: the duration, in seconds, that it took to
+%      synchronize cloud to local
 %
 % DEPENDENCIES:
 %
@@ -28,7 +69,7 @@ function rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, varargin)
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_LoadRoster_rosterTableFromCSV
+%     See the script: script_test_fcn_CollectSubmissions_downloadFolders
 %     for a full test suite.
 %
 % This function was written on 2026_01_06 by S. Brennan
@@ -51,7 +92,7 @@ function rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, varargin)
 % Check if flag_max_speed set. This occurs if the figNum variable input
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
-MAX_NARGIN = 2; % The largest Number of argument inputs to the function
+MAX_NARGIN = 5; % The largest Number of argument inputs to the function
 flag_max_speed = 0; % The default. This runs code with all error checking
 if (nargin==MAX_NARGIN && isequal(varargin{end},-1))
     flag_do_debug = 0; % Flag to plot the results for debugging
@@ -61,11 +102,11 @@ else
     % Check to see if we are externally setting debug mode to be "on"
     flag_do_debug = 0; % Flag to plot the results for debugging
     flag_check_inputs = 1; % Flag to perform input checking
-    MATLABFLAG_LOADROSTER_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_LOADROSTER_FLAG_CHECK_INPUTS");
-    MATLABFLAG_LOADROSTER_FLAG_DO_DEBUG = getenv("MATLABFLAG_LOADROSTER_FLAG_DO_DEBUG");
-    if ~isempty(MATLABFLAG_LOADROSTER_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_LOADROSTER_FLAG_DO_DEBUG)
-        flag_do_debug = str2double(MATLABFLAG_LOADROSTER_FLAG_DO_DEBUG);
-        flag_check_inputs  = str2double(MATLABFLAG_LOADROSTER_FLAG_CHECK_INPUTS);
+    MATLABFLAG_COLLECTSUBMISSIONS_FLAG_CHECK_INPUTS = getenv("MATLABFLAG_COLLECTSUBMISSIONS_FLAG_CHECK_INPUTS");
+    MATLABFLAG_COLLECTSUBMISSIONS_FLAG_DO_DEBUG = getenv("MATLABFLAG_COLLECTSUBMISSIONS_FLAG_DO_DEBUG");
+    if ~isempty(MATLABFLAG_COLLECTSUBMISSIONS_FLAG_CHECK_INPUTS) && ~isempty(MATLABFLAG_COLLECTSUBMISSIONS_FLAG_DO_DEBUG)
+        flag_do_debug = str2double(MATLABFLAG_COLLECTSUBMISSIONS_FLAG_DO_DEBUG);
+        flag_check_inputs  = str2double(MATLABFLAG_COLLECTSUBMISSIONS_FLAG_CHECK_INPUTS);
     end
 end
 
@@ -94,10 +135,22 @@ end
 if 0==flag_max_speed
     if flag_check_inputs
         % Are there the right number of inputs?
-        narginchk(1,MAX_NARGIN);
+        narginchk(4,MAX_NARGIN);
 
-        % Check the CSVPath to be sure it is a text style
-        fcn_DebugTools_checkInputsToFunctions(CSVPath, '_of_char_strings');
+        % Check the rcloneFolder to be sure it is a text style and a folder
+        fcn_DebugTools_checkInputsToFunctions(rcloneFolder, '_of_char_strings');
+        fcn_DebugTools_checkInputsToFunctions(rcloneFolder, 'DoesDirectoryExist');
+
+        % Check the cloudFolder to be sure it is a text style
+        fcn_DebugTools_checkInputsToFunctions(cloudFolder, '_of_char_strings');
+
+        % Check the localFolder to be sure it is a text style and a folder
+        fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
+        fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
+
+        % Check the syncTime to be sure it is a datetime entry       
+        assert(isdatetime(syncTime));
+
     end
 end
 
@@ -155,36 +208,71 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% opts = delimitedTextImportOptions('NumVariables',5);
-% opts.VariableNames
+% Set default values for outputs
+fileContent = "";
+errorMsg = "";
+flagWasSuccessful = true;
 
-opts = detectImportOptions(CSVPath);
+% Create a logfile with current date and time
+startTime = datetime('now');
+timeString = fcn_DebugTools_time2String( syncTime, (-1));
+logFileName = sprintf('logFile_%s.txt',timeString);
 
-opts.VariableNames{1} = 'FullName';
-opts.VariableNames{2} = 'CanvasIDNumber';
-opts.VariableNames{3} = 'PSUEmail';
+% rcloneCommand = sprintf('rclone sync "%s" "%s" --dry-run --combined %s',cloudFolder,localFolder,logFile);
+rcloneCommand = sprintf('rclone sync "%s" "%s" --combined %s',cloudFolder,localFolder,logFileName);
 
+% Check if a lock time file is already there. If so, set flag and message
+% that error occurred.
+queryPath = fullfile(rcloneFolder,'lock*.txt');
+results = dir(queryPath);
 
-% Make sure student number is an integer
-opts = setvartype(opts,{'CanvasIDNumber'},'uint64');
-
-rosterTable_raw = readtable(CSVPath,opts);
-
-Nstudents = height(rosterTable_raw);
-for ith_student = 1:Nstudents
-    thisFullName = rosterTable_raw.('FullName'){ith_student};
-    separatedNames = fcn_DebugTools_parseStringIntoCells(thisFullName);
-    thisFirstName = separatedNames{1};
-    thisLastName = separatedNames{end};
-    rosterTable_raw.('LastName'){ith_student} = thisLastName;
-    rosterTable_raw.('FirstName'){ith_student} = thisFirstName;
-    
+if ~isempty(results)
+    flagWasSuccessful = false;
+    errorMsg = sprintf('A previous lock was found in the folder: %s',results(1).name);
 end
 
-rosterTable_reordered = movevars(rosterTable_raw, 'FirstName', 'Before', 'FullName');
-rosterTable_reordered = movevars(rosterTable_reordered, 'LastName', 'Before', 'FirstName');
+% LATER: warn user and add to
+% local log that collision occurred.
 
-rosterTable = rosterTable_reordered;
+
+if flagWasSuccessful
+    % Add a lock time file
+    lockFileName = sprintf('lock_%s.txt',timeString);
+    lockFilePath = fullfile(rcloneFolder,lockFileName);
+    fcn_DebugTools_fileTouch(lockFilePath,-1);
+
+    thisFolder = pwd;
+    cd(rcloneFolder);
+    [status,cmdout] = system(rcloneCommand);
+    cd(thisFolder);
+
+    % Read log file to determine changes
+    % See: fcn_DebugTools_replaceStringInDirectory
+    logFilePath = fullfile(rcloneFolder,logFileName);
+    fileContent = readlines(logFilePath);
+
+    % Delete log file now that it is read
+    delete(logFilePath);
+
+    % Remove lock time file, releasing command to be run again
+    delete(lockFilePath);
+
+    if 0~=status
+        flagWasSuccessful = false;
+        errorMsg = cmdout;
+    else
+        if ~isempty(cmdout)
+            fprintf(1,'cmdout is:\n');
+            fprintf(1,'%s',cmdout);
+        end
+    end
+
+end
+
+endTime = datetime('now');
+
+processDuration = seconds(endTime - startTime);
+
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,8 +286,14 @@ rosterTable = rosterTable_reordered;
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-	
-    disp(rosterTable);
+    fprintf(1,'\tfileContent: \n');
+	disp(fileContent);
+    fprintf(1,'\tflagWasSuccessful: %.0d\n', flagWasSuccessful);
+    fprintf(1,'\terrorMsg: \n %s\n', errorMsg);
+    fprintf(1,'\ttimeString: %s\n',timeString);
+    fprintf(1,'\tprocessDuration: %.4f seconds\n', processDuration);
+
+    %  disp(rosterTable);
     % % plot the final XY result
     % figure(figNum);
     % clf;

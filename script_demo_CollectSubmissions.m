@@ -1,44 +1,42 @@
-
 %% Introduction to and Purpose of the Code
 % This is the explanation of the code that can be found by running
-%       script_demo_LoadRoster.m
-% This is a script to demonstrate the functions within the LoadRoster code
+%
+%       script_demo_CollectSubmissions.m
+%
+% This is a script to demonstrate the functions within the CollectSubmissions code
 % library. This code repo is typically located at:
 %
-%   https://github.com/ivsg-psu/Classes_Grading_LoadRoster
+%   https://github.com/ivsg-psu/Classes_Grading_CollectStudentSubmissions
 %
 % If you have questions or comments, please contact Sean Brennan at
 % sbrennan@psu.edu
 %
-% This code repo contains tools that prepare a course's roster for use in
-% the automated grading tools used by Dr. Brennan in his courses. These
-% tools require a roster of student names, emails, and ID numbers. As well,
-% the tools require directories to be formed with student-specific
-% information (typically, the student number), and students to be contacted
-% with this information. This repo contains codes that:
+% This code repo contains tools that do the following steps:
+%
+% * Downloads student folders from OneDrive
+%
+% * Compares these submissions to a local copy, identifying any differences
+%
+% * For files/directories that are different, creates a backup copy of the
+% old version
+%
+% * Keeps a tally of which submissions are complete
 % 
-% * Convert a downloaded CSV roster into MATLAB table formats for automated
-% use
-% 
-% * Automatically create student-specific directories for students to send
-% or receive items, for example to provide students with specific codes or
-% to receive graded items from students
-% 
-% * Send emails to students automatically (using MATLAB) so they have
-% access information to their folders
+% * Send emails to students automatically that their submissions were
+% received
 % 
 % As well, step-by-step instructions for using this code are provided in
 % the README.md file.
 
 % REVISION HISTORY:
 % 
-% 2026_01_06 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 % - Created the first version for use in the Vehicle Dynamics course
 % (new release)
 
 
 % TO-DO:
-% - 2026_01_06 by Sean Brennan, sbrennan@psu.edu
+% - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 %   (add to-do items here)
 
 
@@ -52,7 +50,7 @@ cd(filepath);
 
 %% Clear paths and folders, if needed
 if 1==1
-    clear flag_LoadRoster_Folders_Initialized
+    clear flag_CollectSubmissions_Folders_Initialized
 end
 
 if 1==0
@@ -72,12 +70,8 @@ clear dependencyURLs dependencySubfolders
 ith_repo = 0;
 
 ith_repo = ith_repo+1;
-dependencyURLs{ith_repo} = 'https://github.com/ivsg-psu/PathPlanning_PathTools_PathClassLibrary';
+dependencyURLs{ith_repo} = 'https://github.com/ivsg-psu/Classes_Grading_LoadRoster';
 dependencySubfolders{ith_repo} = {'Functions','Data'};
- 
-ith_repo = ith_repo+1;
-dependencyURLs{ith_repo} = 'https://github.com/ivsg-psu/PathPlanning_PathTools_GetUserInputPath';
-dependencySubfolders{ith_repo} = {''};
  
 % ith_repo = ith_repo+1;
 % dependencyURLs{ith_repo} = 'https://github.com/ivsg-psu/FieldDataCollection_VisualizingFieldData_PlotRoad';
@@ -94,7 +88,7 @@ dependencySubfolders{ith_repo} = {''};
 
 
 %% Do we need to set up the work space?
-if ~exist('flag_LoadRoster_Folders_Initialized','var')
+if ~exist('flag_CollectSubmissions_Folders_Initialized','var')
     
     % Clear prior global variable flags
     clear global FLAG_*
@@ -116,15 +110,15 @@ if ~exist('flag_LoadRoster_Folders_Initialized','var')
         'Functions','Data'};
     fcn_DebugTools_addSubdirectoriesToPath(pwd,this_project_folders)
 
-    flag_LoadRoster_Folders_Initialized = 1;
+    flag_CollectSubmissions_Folders_Initialized = 1;
 end
 
 %%% END OF STANDARD INSTALLER CODE %%%%%%%%%
 
 %% Set environment flags for input checking in Laps library
 % These are values to set if we want to check inputs or do debugging
-setenv('MATLABFLAG_LOADROSTER_FLAG_CHECK_INPUTS','1');
-setenv('MATLABFLAG_LOADROSTER_FLAG_DO_DEBUG','0');
+setenv('MATLABFLAG_COLLECTSUBMISSIONS_FLAG_CHECK_INPUTS','1');
+setenv('MATLABFLAG_COLLECTSUBMISSIONS_FLAG_DO_DEBUG','0');
 
 %% Set environment flags that define the ENU origin
 % This sets the "center" of the ENU coordinate system for all plotting
@@ -157,28 +151,81 @@ setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
 % See: http://patorjk.com/software/taag/#p=display&f=Big&t=Start%20of%20Demo%20Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-disp('Welcome to the demo code for the LoadRoster library!')
+disp('Welcome to the demo code for the CollectSubmissions library!')
+
+%% Create test folders
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Create the mirror folder
+pathToMirrorFolder = fullfile(pwd,'Data','StudentSubmissions');
+
+if 1==0
+    if exist(pathToMirrorFolder,'dir')
+        % Remove the directory
+        rmdir(pathToMirrorFolder, 's');
+    end
+    assert(~exist(pathToMirrorFolder,'dir'));
+end
+
+if ~exist(pathToMirrorFolder,'dir')
+    % Create the student directories
+    fcn_LoadRoster_createSubmissionFolders(pathToMirrorFolder, rosterTable, (figNum))
+end
+assert(exist(pathToMirrorFolder,'dir'));
 
 
-%% fcn_LoadRoster_rosterTableFromCSV
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Create the archive folder
+pathToArchiveFolder = fullfile(pwd,'Data','Archive');
+
+if 1==0
+    if exist(pathToArchiveFolder,'dir')
+        % Remove the directory
+        rmdir(pathToArchiveFolder, 's');
+    end
+    assert(~exist(pathToArchiveFolder,'dir'));
+end
+
+if ~exist(pathToArchiveFolder,'dir')
+    % Create the student directories
+    fcn_LoadRoster_createSubmissionFolders(pathToArchiveFolder, rosterTable, (figNum))
+end
+assert(exist(pathToArchiveFolder,'dir'));
+
+%% fcn_CollectSubmissions_downloadFolders
 figNum = 10001;
-titleString = sprintf('fcn_LoadRoster_rosterTableFromCSV');
+titleString = sprintf('fcn_CollectSubmissions_downloadFolders');
 fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % figure(figNum); clf;
 
-% Load some test data
-CSVPath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV;
+% Make sure to run rclone config and use the OneDrivePSU as the name to
+% point to the PSU OneDrive account
+%
+% Command to check folder:
+% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (figNum));
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-sgtitle(titleString, 'Interpreter','none');
+% Call the function
+[fileContent, flagWasSuccessful, errorMsg] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, (figNum));
+
+% sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(istable(rosterTable));
+assert(isstring(fileContent) || ischar(fileContent));
+assert(islogical(flagWasSuccessful));
+assert(isstring(errorMsg) || ischar(errorMsg));
 
 % Check variable sizes
-Nstudents = 34;
-assert(height(rosterTable)==Nstudents);
+assert(size(fileContent,1)>=0);
+assert(size(fileContent,2)>=0);
+assert(size(flagWasSuccessful,1)==1);
+assert(size(flagWasSuccessful,2)==1);
+assert(size(errorMsg,1)>=0);
+assert(size(errorMsg,2)>=0);
 
 % % Check variable values
 % % Are the laps starting at expected points?
@@ -189,31 +236,61 @@ assert(height(rosterTable)==Nstudents);
 % % Make sure plot opened up
 % assert(isequal(get(gcf,'Number'),figNum));
 
-%% fcn_LoadRoster_createSubmissionFolders
-figNum = 10001;
-titleString = sprintf('fcn_LoadRoster_createSubmissionFolders');
+%% fcn_CollectSubmissions_archiveChanges
+figNum = 10002;
+titleString = sprintf('fcn_CollectSubmissions_archiveChanges');
 fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % figure(figNum); clf;
 
-rootPath = fullfile(pwd,'Data','StudentSubmissions');
+% Make sure to run rclone config and use the OneDrivePSU as the name to
+% point to the PSU OneDrive account
+%
+% Command to check folder:
+% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-if exist(rootPath,'dir')
-    % Remove the directory
-    rmdir(rootPath, 's');
-end
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
+archiveFolder = fullfile(pwd,'Data','Archive');
 
-assert(~exist(rootPath,'dir'));
+[fileContent, ~, ~, timeString, ~] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, (-1));
 
-% Load some test data
-rosterTable = fcn_INTERNAL_loadExampleData_createSubmissionFolders;
+subFolder = [];
+flagArchiveEqualFiles = [];
 
+
+%%%%%%%%%%
 % Call the function
-fcn_LoadRoster_createSubmissionFolders(rootPath, rosterTable, (figNum))
+[totalSame, totalAdded, totalDeleted, totalModified, totalErrored] = ...
+    fcn_CollectSubmissions_archiveChanges(...
+    fileContent, localFolder, archiveFolder, timeString, ...
+    (subFolder), (flagArchiveEqualFiles), (figNum));
 
-assert(exist(rootPath,'dir'));
+% sgtitle(titleString, 'Interpreter','none');
 
-% Remove the directory
-rmdir(rootPath, 's');
+% Check variable types
+assert(isnumeric(totalSame));
+assert(isnumeric(totalAdded));
+assert(isnumeric(totalDeleted));
+assert(isnumeric(totalModified));
+assert(isnumeric(totalErrored));
+
+% Check variable sizes
+assert(isequal(size(totalSame),[1 1]));
+assert(isequal(size(totalAdded),[1 1]));
+assert(isequal(size(totalDeleted),[1 1]));
+assert(isequal(size(totalModified),[1 1]));
+assert(isequal(size(totalErrored),[1 1]));
+
+% % Check variable values
+% % Are the laps starting at expected points?
+% assert(isequal(2,min(cell_array_of_lap_indices{1})));
+% assert(isequal(102,min(cell_array_of_lap_indices{2})));
+% assert(isequal(215,min(cell_array_of_lap_indices{3})));
+
+% % Make sure plot opened up
+% assert(isequal(get(gcf,'Number'),figNum));
 
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -255,9 +332,9 @@ end
 end % Ends fcn_INTERNAL_clearUtilitiesFromPathAndFolders
 
 
-%% fcn_INTERNAL_loadExampleData
-function CSVpath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV
-
-% Use the last data
-CSVpath = fullfile(cd,'Data','roster_2026_01_06.csv');
-end % Ends fcn_INTERNAL_loadExampleData
+% %% fcn_INTERNAL_loadExampleData
+% function CSVpath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV
+% 
+% % Use the last data
+% CSVpath = fullfile(cd,'Data','roster_2026_01_06.csv');
+% end % Ends fcn_INTERNAL_loadExampleData

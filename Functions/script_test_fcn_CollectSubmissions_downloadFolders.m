@@ -1,14 +1,14 @@
-% script_test_fcn_LoadRoster_rosterTableFromCSV.m
-% tests fcn_LoadRoster_rosterTableFromCSV.m
+% script_test_fcn_CollectSubmissions_downloadFolders.m
+% tests fcn_CollectSubmissions_downloadFolders.m
 
 % REVISION HISTORY:
 %
-% 2026_01_06 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 % - wrote the code originally, using breakDataIntoLaps as starter
 
 % TO-DO:
 %
-% 2026_01_06 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 % - (fill in items here)
 
 
@@ -33,32 +33,51 @@ close all
 close all;
 fprintf(1,'Figure: 1XXXXXX: DEMO cases\n');
 
-%% DEMO case: call the function to show it operating using VD 2026 roster
+%% DEMO case: basic example
 figNum = 10001;
-titleString = sprintf('DEMO case: call the function to show it operating using VD 2026 roster');
+titleString = sprintf('DEMO case: basic example');
 fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % figure(figNum); clf;
 
-% Load some test data
-CSVPath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV;
+% Make sure to run rclone config and use the OneDrivePSU as the name to
+% point to the PSU OneDrive account
+%
+% Command to check folder:
+% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (figNum));
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-sgtitle(titleString, 'Interpreter','none');
+% Call the function
+[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (figNum));
+
+% sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(istable(rosterTable));
+assert(isstring(fileContent) || ischar(fileContent));
+assert(islogical(flagWasSuccessful));
+assert(isstring(errorMsg) || ischar(errorMsg));
+assert(isstring(timeString) || ischar(timeString));
+assert(isnumeric(processDuration));
 
 % Check variable sizes
-Nstudents = 34;
-assert(height(rosterTable)==Nstudents);
+assert(size(fileContent,1)>=0);
+assert(size(fileContent,2)>=0);
+assert(size(flagWasSuccessful,1)==1);
+assert(size(flagWasSuccessful,2)==1);
+assert(size(errorMsg,1)>=0);
+assert(size(errorMsg,2)>=0);
+assert(size(timeString,1)==1);
+assert(size(timeString,2)==15);
+assert(size(processDuration,1)==1);
+assert(size(processDuration,2)==1);
 
-% % Check variable values
-% % Are the laps starting at expected points?
-% assert(isequal(2,min(cell_array_of_lap_indices{1})));
-% assert(isequal(102,min(cell_array_of_lap_indices{2})));
-% assert(isequal(215,min(cell_array_of_lap_indices{3})));
-% 
+% Check variable values
+% Are the laps starting at expected points?
+assert(processDuration>0);
+
 % % Make sure plot opened up
 % assert(isequal(get(gcf,'Number'),figNum));
 
@@ -113,17 +132,38 @@ figNum = 80001;
 fprintf(1,'Figure: %.0f: FAST mode, empty figNum\n',figNum);
 figure(figNum); close(figNum);
 
-% Load some test data
-CSVPath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV;
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, ([]));
+% Call the function
+[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, ([]));
+
+% sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(istable(rosterTable));
+assert(isstring(fileContent) || ischar(fileContent));
+assert(islogical(flagWasSuccessful));
+assert(isstring(errorMsg) || ischar(errorMsg));
+assert(isstring(timeString) || ischar(timeString));
+assert(isnumeric(processDuration));
 
 % Check variable sizes
-Nstudents = 34;
-assert(height(rosterTable)==Nstudents);
+assert(size(fileContent,1)>=0);
+assert(size(fileContent,2)>=0);
+assert(size(flagWasSuccessful,1)==1);
+assert(size(flagWasSuccessful,2)==1);
+assert(size(errorMsg,1)>=0);
+assert(size(errorMsg,2)>=0);
+assert(size(timeString,1)==1);
+assert(size(timeString,2)==15);
+assert(size(processDuration,1)==1);
+assert(size(processDuration,2)==1);
+
+% Check variable values
+% Are the laps starting at expected points?
+assert(processDuration>0);
 
 % Make sure plot did NOT open up
 figHandles = get(groot, 'Children');
@@ -135,17 +175,38 @@ figNum = 80002;
 fprintf(1,'Figure: %.0f: FAST mode, figNum=-1\n',figNum);
 figure(figNum); close(figNum);
 
-% Load some test data
-CSVPath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV;
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (-1));
+% Call the function
+[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
+
+% sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(istable(rosterTable));
+assert(isstring(fileContent) || ischar(fileContent));
+assert(islogical(flagWasSuccessful));
+assert(isstring(errorMsg) || ischar(errorMsg));
+assert(isstring(timeString) || ischar(timeString));
+assert(isnumeric(processDuration));
 
 % Check variable sizes
-Nstudents = 34;
-assert(height(rosterTable)==Nstudents);
+assert(size(fileContent,1)>=0);
+assert(size(fileContent,2)>=0);
+assert(size(flagWasSuccessful,1)==1);
+assert(size(flagWasSuccessful,2)==1);
+assert(size(errorMsg,1)>=0);
+assert(size(errorMsg,2)>=0);
+assert(size(timeString,1)==1);
+assert(size(timeString,2)==15);
+assert(size(processDuration,1)==1);
+assert(size(processDuration,2)==1);
+
+% Check variable values
+% Are the laps starting at expected points?
+assert(processDuration>0);
 
 % Make sure plot did NOT open up
 figHandles = get(groot, 'Children');
@@ -158,16 +219,18 @@ fprintf(1,'Figure: %.0f: FAST mode comparisons\n',figNum);
 figure(figNum);
 close(figNum);
 
-% Load some test data
-CSVPath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV;
+rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-Niterations = 10;
+Niterations = 1;
 
 % Do calculation without pre-calculation
 tic;
 for ith_test = 1:Niterations
     % Call the function
-    rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, ([]));
+    [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+        fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, ([]));
 end
 slow_method = toc;
 
@@ -175,7 +238,8 @@ slow_method = toc;
 tic;
 for ith_test = 1:Niterations
     % Call the function
-    rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (-1));
+    [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+        fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
 end
 fast_method = toc;
 
@@ -236,9 +300,12 @@ end
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
-%% fcn_INTERNAL_loadExampleData
-function CSVpath = fcn_INTERNAL_loadExampleData_rosterTableFromCSV
-
-% Use the last data
-CSVpath = fullfile(cd,'Data','roster_2026_01_06.csv');
-end % Ends fcn_INTERNAL_loadExampleData
+% %% fcn_INTERNAL_loadExampleData
+% function rosterTable = fcn_INTERNAL_loadExampleData_createSubmissionFolders
+% 
+% % Use the last data
+% CSVPath = fullfile(cd,'Data','roster_2026_01_06.csv');
+% rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (-1));
+% 
+% 
+% end % Ends fcn_INTERNAL_loadExampleData
