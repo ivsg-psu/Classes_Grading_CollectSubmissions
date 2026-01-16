@@ -32,12 +32,28 @@
 % 
 % 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 % - Created the first version for use in the Vehicle Dynamics course
+%
+% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
+% - Wrote fcn_CollectSubmissions_confirmSubmissions
+%   % * Used archiveChanges as starter
+%   % * This is a function that emails students to confirm submissions
+%   % * Lets users know that the file(s) were received 
+%   % * How it works:
+%   %   % * Loops through change list between cloud and local mirror, 
+%   %   % * Finds if any match an assignment string, 
+%   %   % * Checks if the user preferences indicate that confirmations are
+%   %   %   % desired.
+%   %   % * Sends confirmation emails to the associated emails 
+% - Wrote fcn_CollectSubmissions_setRcloneFolder
+%   % * Sets the path to the local install of the rclone software based on 
+%   %   % the current computer
+%
 % (new release)
 
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
-%   (add to-do items here)
+%   * Use a function call to set the rclone folder for each computer config
 
 
 %% Make sure we are running out of root directory
@@ -154,12 +170,17 @@ setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
 disp('Welcome to the demo code for the CollectSubmissions library!')
 
 %% Create test folders
+fprintf(1,'Loading the class roster.\n');
+CSVPath = fullfile(cd,'Data','roster_2026_01_14.csv');
+emailForAddedTestStudents = 'snb10@psu.edu';
+rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create the mirror folder
 pathToMirrorFolder = fullfile(pwd,'Data','StudentSubmissions');
 
-if 1==0
+if 1==1
     if exist(pathToMirrorFolder,'dir')
         % Remove the directory
         rmdir(pathToMirrorFolder, 's');
@@ -169,7 +190,8 @@ end
 
 if ~exist(pathToMirrorFolder,'dir')
     % Create the student directories
-    fcn_LoadRoster_createSubmissionFolders(pathToMirrorFolder, rosterTable, (figNum))
+	fprintf(1,'Creating student template folders in the mirror folder.\n');
+    fcn_LoadRoster_createSubmissionFolders(pathToMirrorFolder, rosterTable, (1))
 end
 assert(exist(pathToMirrorFolder,'dir'));
 
@@ -178,7 +200,7 @@ assert(exist(pathToMirrorFolder,'dir'));
 % Create the archive folder
 pathToArchiveFolder = fullfile(pwd,'Data','Archive');
 
-if 1==0
+if 1==1
     if exist(pathToArchiveFolder,'dir')
         % Remove the directory
         rmdir(pathToArchiveFolder, 's');
@@ -188,7 +210,8 @@ end
 
 if ~exist(pathToArchiveFolder,'dir')
     % Create the student directories
-    fcn_LoadRoster_createSubmissionFolders(pathToArchiveFolder, rosterTable, (figNum))
+	fprintf(1,'Creating archive folders in the mirror folder.\n');
+    fcn_LoadRoster_createSubmissionFolders(pathToArchiveFolder, rosterTable, (1))
 end
 assert(exist(pathToArchiveFolder,'dir'));
 
@@ -204,13 +227,14 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
+syncTime = datetime('now');
 
 % Call the function
-[fileContent, flagWasSuccessful, errorMsg] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, (figNum));
+[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (figNum));
 
 % sgtitle(titleString, 'Interpreter','none');
 
@@ -218,6 +242,8 @@ localFolder = fullfile(pwd,'Data','StudentSubmissions');
 assert(isstring(fileContent) || ischar(fileContent));
 assert(islogical(flagWasSuccessful));
 assert(isstring(errorMsg) || ischar(errorMsg));
+assert(isstring(timeString) || ischar(timeString));
+assert(isnumeric(processDuration));
 
 % Check variable sizes
 assert(size(fileContent,1)>=0);
@@ -226,12 +252,14 @@ assert(size(flagWasSuccessful,1)==1);
 assert(size(flagWasSuccessful,2)==1);
 assert(size(errorMsg,1)>=0);
 assert(size(errorMsg,2)>=0);
+assert(size(timeString,1)==1);
+assert(size(timeString,2)==15);
+assert(size(processDuration,1)==1);
+assert(size(processDuration,2)==1);
 
-% % Check variable values
-% % Are the laps starting at expected points?
-% assert(isequal(2,min(cell_array_of_lap_indices{1})));
-% assert(isequal(102,min(cell_array_of_lap_indices{2})));
-% assert(isequal(215,min(cell_array_of_lap_indices{3})));
+% Check variable values
+% Are the laps starting at expected points?
+assert(processDuration>0);
 % 
 % % Make sure plot opened up
 % assert(isequal(get(gcf,'Number'),figNum));
@@ -248,7 +276,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -283,6 +311,67 @@ assert(isequal(size(totalsCollected.totalAdded),[1 1]));
 assert(isequal(size(totalsCollected.totalDeleted),[1 1]));
 assert(isequal(size(totalsCollected.totalModified),[1 1]));
 assert(isequal(size(totalsCollected.totalErrored),[1 1]));
+
+% % Check variable values
+% % Are the laps starting at expected points?
+% assert(isequal(2,min(cell_array_of_lap_indices{1})));
+% assert(isequal(102,min(cell_array_of_lap_indices{2})));
+% assert(isequal(215,min(cell_array_of_lap_indices{3})));
+
+% % Make sure plot opened up
+% assert(isequal(get(gcf,'Number'),figNum));
+
+%% fcn_CollectSubmissions_confirmSubmissions
+figNum = 10003;
+titleString = sprintf(fcn_CollectSubmissions_confirmSubmissions');
+fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
+% figure(figNum); clf;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% Load the folders
+% Make sure to run rclone config and use the OneDrivePSU as the name to
+% point to the PSU OneDrive account
+%
+% Command to check folder:
+% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
+
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','StudentSubmissions');
+archiveFolder = fullfile(pwd,'Data','Archive');
+syncTime = datetime('now');
+
+[fileContent, ~, ~, timeString, ~] = ...
+    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
+
+subFolder = [];
+flagArchiveEqualFiles = [];
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% Load the roster
+CSVPath = fullfile(cd,'Data','roster_2026_01_14.csv');
+emailForAddedTestStudents = 'snb10@psu.edu';
+rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
+
+
+assignmentString = '';
+
+%%%%%%%%%%
+% Call the function
+updatedRosterTable = ...
+    fcn_CollectSubmissions_confirmSubmissions(...
+    fileContent, rosterTable, (assignmentString), (figNum));
+
+% sgtitle(titleString, 'Interpreter','none');
+
+% Check variable types
+assert(istable(updatedRosterTable));
+
+% Check variable sizes
+assert(height(updatedRosterTable) == height(rosterTable));
 
 % % Check variable values
 % % Are the laps starting at expected points?

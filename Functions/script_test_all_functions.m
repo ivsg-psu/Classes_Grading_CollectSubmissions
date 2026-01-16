@@ -30,6 +30,9 @@
 %   % * Checks for warning, forbidden, and required strings
 %   % * Added commented out section to allow rapid serch for strings
 %   %   % and replacement.
+% 
+% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
+% - Updated ignore flags to prevent processing of .p and .asv files
 
 % TO-DO:
 % 2025_11_20 by Sean Brennan, sbrennan@psu.edu
@@ -43,22 +46,25 @@ clc;
 % repoShortName = '_MapGen_';
 repoShortName = '_CollectSubmissions_';
 
-outputFile = cat(2,'script_test_fcn',repoShortName,'all_stdout.txt');
-diary(fullfile(pwd,outputFile));
+% outputFile = cat(2,'script_test_fcn',repoShortName,'all_stdout.txt');
+% diary(fullfile(pwd,outputFile));
 
 %% Root folder checks start here
 
-st = dbstack; 
-thisFile = which(st(1).file);
-[filepath,name,ext] = fileparts(thisFile);
-rootFilePath = extractBefore(filepath,'Functions');
+% st = dbstack; 
+% thisFile = which(st(1).file);
+% [filepath,name,ext] = fileparts(thisFile);
+% rootFilePath = extractBefore(filepath,'Functions');
 
-fcn_DebugTools_cprintf('*blue','Checking root folder:\n\t%s:\n', filepath);
+rootFilePath = pwd;
+fcn_DebugTools_cprintf('*blue',sprintf('Checking root folder:'));
+fprintf(1,'\n\t');
+fprintf(1,'%s:\n', rootFilePath);
 
 
 %% Make sure there is only one .m file in main folder
 fcn_DebugTools_cprintf('*blue','');
-fcn_DebugTools_cprintf('*blue','\tChecking that there is 1 m-file in root folder: ');
+fcn_DebugTools_cprintf('*blue',sprintf('\tChecking that there is 1 m-file in root folder: '));
 
 fileListRootFolder = dir(rootFilePath);
 [...
@@ -74,47 +80,49 @@ fileListRootFolder = dir(rootFilePath);
 
 sumOfmFiles = sum(flags_isMfile);
 if sumOfmFiles~=1
-    fcn_DebugTools_cprintf('*Red','FAILED... %.0f were found!\n', sumOfmFiles);
+    fcn_DebugTools_cprintf('*Red',sprintf('FAILED... %.0f were found!\n', sumOfmFiles));
 else
-    fcn_DebugTools_cprintf('*Green','PASSED.\n');
+    fcn_DebugTools_cprintf('*Green',sprintf('PASSED.\n'));
 end
 % script_test_fcn_DebugTools_cprintf
 
 %% Check that "script_demo_(reponame).m" exists
 repoDemoNameString = cat(2,'script_demo',repoShortName(1:end-1),'.m');
-fcn_DebugTools_cprintf('*blue','\tChecking that there is a demo file, %s: ', repoDemoNameString);
+fcn_DebugTools_cprintf('*blue',sprintf('\tChecking that there is a demo file, %s: ', repoDemoNameString));
 
 if exist(repoDemoNameString,'file')
-    fcn_DebugTools_cprintf('*Green','PASSED.\n');
+	fcn_DebugTools_cprintf('*Green',sprintf('PASSED.'));
+	fprintf(1,'\n');
 else
-    fcn_DebugTools_cprintf('*Red','FAILED.\n', sumOfmFiles);
+	fcn_DebugTools_cprintf('*Red',sprintf('FAILED.'));
+	fprintf(1,'\n');
 end
 
 %% Check that "README.md" exists
 expectedNameString = 'README.md';
-fcn_DebugTools_cprintf('*blue','\tChecking that there is a README.md file: ');
+fcn_DebugTools_cprintf('*blue',sprintf('\tChecking that there is a README.md file: '));
 
 if exist(expectedNameString,'file')
-    fcn_DebugTools_cprintf('*Green','PASSED.\n');
+    fcn_DebugTools_cprintf('*Green',sprintf('PASSED.\n'));
 else
-    fcn_DebugTools_cprintf('*Red','FAILED.\n', sumOfmFiles);
+    fcn_DebugTools_cprintf('*Red',sprintf('FAILED.\n'));
 end
 
 %% Checking existence of key folders
 expectedFolders = {'Functions', 'Data', 'Documents', 'Installer', 'Images'};
 for ith_expectedFolder = 1:length(expectedFolders)
     thisFolder = expectedFolders{ith_expectedFolder};
-    fcn_DebugTools_cprintf('*blue','\tChecking that there is a %s subfolder: ', thisFolder);
+    fcn_DebugTools_cprintf('*blue',sprintf('\tChecking that there is a %s subfolder: ', thisFolder));
     expectedPath = fullfile(rootFilePath,thisFolder);
     if exist(expectedPath,'dir')
-        fcn_DebugTools_cprintf('*Green','PASSED.\n');
+        fcn_DebugTools_cprintf('*Green',sprintf('PASSED.\n'));
     else
-        fcn_DebugTools_cprintf('*Red','FAILED.\n', sumOfmFiles);
+        fcn_DebugTools_cprintf('*Red',sprintf('FAILED.\n'));
     end
 end
 
 %% Main demo file checks start here
-fcn_DebugTools_cprintf('*blue','Checking main demo file:\n\t%s:\n', repoDemoNameString);
+fcn_DebugTools_cprintf('*blue',sprintf('Checking main demo file:\n\t%s:\n', repoDemoNameString));
 
 %% Does main file contain required strings?
 
@@ -133,13 +141,13 @@ if ~contains(rootFilePath,'Debug')
 end
 for ith_string = 1:length(requiredStrings)
     thisString = requiredStrings{ith_string};
-    fcn_DebugTools_cprintf('*blue','\tChecking that it contains "%s": ', thisString);
+    fcn_DebugTools_cprintf('*blue',sprintf('\tChecking that it contains "%s": ', thisString));
     flagsStringWasFoundInFiles = fcn_DebugTools_directoryStringQuery(temp, thisString, (-1));
 
     if flagsStringWasFoundInFiles
-        fcn_DebugTools_cprintf('*Green','PASSED.\n');
+        fcn_DebugTools_cprintf('*Green',sprintf('PASSED.\n'));
     else
-        fcn_DebugTools_cprintf('*Red','FAILED.\n', sumOfmFiles);
+        fcn_DebugTools_cprintf('*Red',sprintf('FAILED.\n'));
     end
 end
 
@@ -203,8 +211,8 @@ end
 fprintf(1,'\nSUMMARY OF FOUND FILES: \n');
 indicies_filesToTest = find(1==flags_isMfileTestingScriptWithMatchingFunction);
 if ~isempty(indicies_filesToTest)
-    fcn_DebugTools_cprintf('*blue','The following scripts were found that will be tested:\n');
-    fcn_DebugTools_cprintf('*blue','\tThere are %.0f total testable functions in this repo:\n',length(indicies_filesToTest));
+    fcn_DebugTools_cprintf('*blue',sprintf('The following scripts were found that will be tested:\n'));
+    fcn_DebugTools_cprintf('*blue',sprintf('\tThere are %.0f total testable functions in this repo:\n',length(indicies_filesToTest)));
     for ith_file = 1:length(indicies_filesToTest)
         currentFileIndex = indicies_filesToTest(ith_file);
         fprintf(1,'\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
@@ -214,55 +222,59 @@ end
 % List missed files
 indicies_missedFiles_flags_RAW = flags_isFile.*(0==flags_isMfile);
 indicies_missedFiles_flags = fcn_INTERNAL_removeFromList(indicies_missedFiles_flags_RAW, fileListFunctionsFolderNoDirectories,'script_test_all_functions');
+indicies_missedFiles_flags = fcn_INTERNAL_removeFromList(indicies_missedFiles_flags, fileListFunctionsFolderNoDirectories,'.p');
+indicies_missedFiles_flags = fcn_INTERNAL_removeFromList(indicies_missedFiles_flags, fileListFunctionsFolderNoDirectories,'.asv');
 indicies_missedFiles = find(indicies_missedFiles_flags);
 if ~isempty(indicies_missedFiles)
-    fcn_DebugTools_cprintf('*red','The following files were found, but do not seem to be repo functions or scripts:\n');
+    fcn_DebugTools_cprintf('*red',sprintf('The following files were found, but do not seem to be repo functions or scripts:\n'));
     for ith_file = 1:length(indicies_missedFiles)
         currentFileIndex = indicies_missedFiles(ith_file);
-        fcn_DebugTools_cprintf('*red','\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
+        fcn_DebugTools_cprintf('*red',sprintf('\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name))
     end    
 end
 
 % List mfiles that are not testing scripts or functions
 indicies_missedMfiles_flags_RAW = flags_isMfile.*(0==flags_isMfileFunction).*(0==flags_isMfileTestingScript);
 indicies_missedMfiles_flags = fcn_INTERNAL_removeFromList(indicies_missedMfiles_flags_RAW, fileListFunctionsFolderNoDirectories,'script_test_all_functions');
+indicies_missedMfiles_flags = fcn_INTERNAL_removeFromList(indicies_missedMfiles_flags, fileListFunctionsFolderNoDirectories,'.p');
+indicies_missedMfiles_flags = fcn_INTERNAL_removeFromList(indicies_missedMfiles_flags, fileListFunctionsFolderNoDirectories,'.asv');
 indicies_missedMfiles = find(indicies_missedMfiles_flags);
 
 if ~isempty(indicies_missedMfiles)
-    fcn_DebugTools_cprintf('*red','The following m-files were found, but do not seem to be test scripts or functions:\n');
+    fcn_DebugTools_cprintf('*red',sprintf('The following m-files were found, but do not seem to be test scripts or functions:\n'));
     for ith_file = 1:length(indicies_missedMfiles)
         currentFileIndex = indicies_missedMfiles(ith_file);
-        fcn_DebugTools_cprintf('*red','\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
+        fcn_DebugTools_cprintf('*red',sprintf('\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name))
     end    
 end
 
 % List missed functions
 indicies_missedFunctions = find(1==(flags_isMfileFunction.*(0==flags_isMfileTestedFunction)));
 if ~isempty(indicies_missedFunctions)
-    fcn_DebugTools_cprintf('*red','The following functions were found, but do not have a matching test scripts:\n');
+    fcn_DebugTools_cprintf('*red',sprintf('The following functions were found, but do not have a matching test scripts:\n'));
     for ith_file = 1:length(indicies_missedFunctions)
         currentFileIndex = indicies_missedFunctions(ith_file);
-        fcn_DebugTools_cprintf('*red','\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
+        fcn_DebugTools_cprintf('*red',sprintf('\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name))
     end    
 end
 
 % List missed scripts
 indicies_missedScripts = find(1==(flags_isMfileTestingScript.*(0==flags_isMfileTestingScriptWithMatchingFunction)));
 if ~isempty(indicies_missedScripts)
-    fcn_DebugTools_cprintf('*red','The following test scripts were found, but do not have a matching function:\n');
+    fcn_DebugTools_cprintf('*red',sprintf('The following test scripts were found, but do not have a matching function:\n'));
     for ith_file = 1:length(indicies_missedScripts)
         currentFileIndex = indicies_missedScripts(ith_file);
-        fcn_DebugTools_cprintf('*red','\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
+        fcn_DebugTools_cprintf('*red',sprintf('\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name))
     end    
 end
 
 % List repeats
 indicies_repeatedFiles = find(1==flags_isMfileRepeated);
 if ~isempty(indicies_repeatedFiles)
-    fcn_DebugTools_cprintf('*red','The following files seem to be repeated:\n');
+    fcn_DebugTools_cprintf('*red',sprintf('The following files seem to be repeated:\n'));
     for ith_file = 1:length(indicies_repeatedFiles)
         currentFileIndex = indicies_repeatedFiles(ith_file);
-        fcn_DebugTools_cprintf('*red','\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name)
+        fcn_DebugTools_cprintf('*red',sprintf('\t%s\n',fileListFunctionsFolderNoDirectories(currentFileIndex).name))
     end    
 end
 
@@ -290,8 +302,8 @@ for ith_testScript = 1:NtestScripts
     file_name_extended = fileListFunctionsFolderNoDirectories(currentFileIndex).name;
     file_name = erase(file_name_extended,'.m');
     file_name_trunc = erase(file_name,'script_');
-    fcn_DebugTools_cprintf('*blue','%s\n','   ');
-    fcn_DebugTools_cprintf('*blue','Testing script: %.0d of %.0d, %s\n\n',ith_testScript,NtestScripts,file_name_trunc);
+    fcn_DebugTools_cprintf('*blue',sprintf('%s\n','   '));
+    fcn_DebugTools_cprintf('*blue',sprintf('Testing script: %.0d of %.0d, %s\n\n',ith_testScript,NtestScripts,file_name_trunc));
 
     % Start the test
     tstart = tic;

@@ -45,7 +45,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -103,7 +103,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -162,7 +162,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -266,7 +266,7 @@ figure(figNum); close(figNum);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -318,7 +318,7 @@ figure(figNum); close(figNum);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');
@@ -373,7 +373,7 @@ close(figNum);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 archiveFolder = fullfile(pwd,'Data','Archive');

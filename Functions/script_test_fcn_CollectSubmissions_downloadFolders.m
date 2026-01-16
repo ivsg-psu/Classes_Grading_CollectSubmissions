@@ -45,7 +45,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % Command to check folder:
 % rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 syncTime = datetime('now');
@@ -133,7 +133,7 @@ figNum = 80001;
 fprintf(1,'Figure: %.0f: FAST mode, empty figNum\n',figNum);
 figure(figNum); close(figNum);
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 syncTime = datetime('now');
@@ -177,7 +177,7 @@ figNum = 80002;
 fprintf(1,'Figure: %.0f: FAST mode, figNum=-1\n',figNum);
 figure(figNum); close(figNum);
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 syncTime = datetime('now');
@@ -222,7 +222,7 @@ fprintf(1,'Figure: %.0f: FAST mode comparisons\n',figNum);
 figure(figNum);
 close(figNum);
 
-rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
 localFolder = fullfile(pwd,'Data','StudentSubmissions');
 syncTime = datetime('now');

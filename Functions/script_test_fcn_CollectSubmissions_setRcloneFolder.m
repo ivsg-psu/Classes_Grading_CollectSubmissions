@@ -1,14 +1,14 @@
-% script_test_fcn_CollectSubmissions_updateLog.m
-% tests fcn_CollectSubmissions_updateLog.m
+% script_test_fcn_CollectSubmissions_setRcloneFolder.m
+% tests fcn_CollectSubmissions_setRcloneFolder.m
 
 % REVISION HISTORY:
 %
-% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
 % - wrote the code originally, using breakDataIntoLaps as starter
 
 % TO-DO:
 %
-% 2026_01_09 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
 % - (fill in items here)
 
 
@@ -39,61 +39,24 @@ titleString = sprintf('DEMO case: basic example with defaults');
 fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % figure(figNum); clf;
 
-% Make sure to run rclone config and use the OneDrivePSU as the name to
-% point to the PSU OneDrive account
-%
-% Command to check folder:
-% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
 
-rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
-cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','StudentSubmissions');
-archiveFolder = fullfile(pwd,'Data','Archive');
-logFile     = fullfile(pwd,'Data','logFile.');
-syncTime = datetime('now');
-
-[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
-
-subFolder = '';
-flagArchiveEqualFiles = 0;
-
-
-
-totalsCollected = ...
-    fcn_CollectSubmissions_archiveChanges(...
-    fileContent, localFolder, archiveFolder, timeString, ...
-    (subFolder), (flagArchiveEqualFiles), (figNum));
-
+%%%%%%%%%%
 % Call the function
-fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, flagWasSuccessful, subFolder, totalsCollected, (figNum))
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 
 % sgtitle(titleString, 'Interpreter','none');
 
-% % Check variable types
-% assert(isnumeric(totalSame));
-% assert(isnumeric(totalAdded));
-% assert(isnumeric(totalDeleted));
-% assert(isnumeric(totalModified));
-% assert(isnumeric(totalErrored));
-% 
-% % Check variable sizes
-% assert(isequal(size(totalSame),[1 1]));
-% assert(isequal(size(totalAdded),[1 1]));
-% assert(isequal(size(totalDeleted),[1 1]));
-% assert(isequal(size(totalModified),[1 1]));
-% assert(isequal(size(totalErrored),[1 1]));
+% Check variable types
+assert(ischar(rcloneFolder));
+
+% Check variable sizes
+assert(~isempty(rcloneFolder));
 
 % % Check variable values
-% % Are the laps starting at expected points?
-% assert(isequal(2,min(cell_array_of_lap_indices{1})));
-% assert(isequal(102,min(cell_array_of_lap_indices{2})));
-% assert(isequal(215,min(cell_array_of_lap_indices{3})));
+assert(isfolder(rcloneFolder))
 
 % % Make sure plot opened up
 % assert(isequal(get(gcf,'Number'),figNum));
-
-
 
 %% Test cases start here. These are very simple, usually trivial
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -167,25 +130,25 @@ fprintf(1,'Figure: 8XXXXXX: FAST mode cases\n');
 % %%%%%%%%%%
 % % Call the function
 % totalsCollected = ...
-%     fcn_CollectSubmissions_archiveChanges(...
+%     fcn_CollectSubmissions_setRcloneFolder(...
 %     fileContent, localFolder, archiveFolder, timeString, ...
 %     (subFolder), (flagArchiveEqualFiles), ([]));
 % 
 % % sgtitle(titleString, 'Interpreter','none');
 % 
 % % Check variable types
-% assert(isnumeric(totalSame));
-% assert(isnumeric(totalAdded));
-% assert(isnumeric(totalDeleted));
-% assert(isnumeric(totalModified));
-% assert(isnumeric(totalErrored));
+% assert(isnumeric(totalsCollected.totalSame));
+% assert(isnumeric(totalsCollected.totalAdded));
+% assert(isnumeric(totalsCollected.totalDeleted));
+% assert(isnumeric(totalsCollected.totalModified));
+% assert(isnumeric(totalsCollected.totalErrored));
 % 
 % % Check variable sizes
-% assert(isequal(size(totalSame),[1 1]));
-% assert(isequal(size(totalAdded),[1 1]));
-% assert(isequal(size(totalDeleted),[1 1]));
-% assert(isequal(size(totalModified),[1 1]));
-% assert(isequal(size(totalErrored),[1 1]));
+% assert(isequal(size(totalsCollected.totalSame),[1 1]));
+% assert(isequal(size(totalsCollected.totalAdded),[1 1]));
+% assert(isequal(size(totalsCollected.totalDeleted),[1 1]));
+% assert(isequal(size(totalsCollected.totalModified),[1 1]));
+% assert(isequal(size(totalsCollected.totalErrored),[1 1]));
 % 
 % % Make sure plot did NOT open up
 % figHandles = get(groot, 'Children');
@@ -219,25 +182,25 @@ fprintf(1,'Figure: 8XXXXXX: FAST mode cases\n');
 % %%%%%%%%%%
 % % Call the function
 % totalsCollected = ...
-%     fcn_CollectSubmissions_archiveChanges(...
+%     fcn_CollectSubmissions_setRcloneFolder(...
 %     fileContent, localFolder, archiveFolder, timeString, ...
 %     (subFolder), (flagArchiveEqualFiles), (-1));
 % 
 % % sgtitle(titleString, 'Interpreter','none');
 % 
 % % Check variable types
-% assert(isnumeric(totalSame));
-% assert(isnumeric(totalAdded));
-% assert(isnumeric(totalDeleted));
-% assert(isnumeric(totalModified));
-% assert(isnumeric(totalErrored));
+% assert(isnumeric(totalsCollected.totalSame));
+% assert(isnumeric(totalsCollected.totalAdded));
+% assert(isnumeric(totalsCollected.totalDeleted));
+% assert(isnumeric(totalsCollected.totalModified));
+% assert(isnumeric(totalsCollected.totalErrored));
 % 
 % % Check variable sizes
-% assert(isequal(size(totalSame),[1 1]));
-% assert(isequal(size(totalAdded),[1 1]));
-% assert(isequal(size(totalDeleted),[1 1]));
-% assert(isequal(size(totalModified),[1 1]));
-% assert(isequal(size(totalErrored),[1 1]));
+% assert(isequal(size(totalsCollected.totalSame),[1 1]));
+% assert(isequal(size(totalsCollected.totalAdded),[1 1]));
+% assert(isequal(size(totalsCollected.totalDeleted),[1 1]));
+% assert(isequal(size(totalsCollected.totalModified),[1 1]));
+% assert(isequal(size(totalsCollected.totalErrored),[1 1]));
 % 
 % 
 % % Make sure plot did NOT open up
@@ -277,7 +240,7 @@ fprintf(1,'Figure: 8XXXXXX: FAST mode cases\n');
 % for ith_test = 1:Niterations
 %     % Call the function
 %     totalsCollected = ...
-%         fcn_CollectSubmissions_archiveChanges(...
+%         fcn_CollectSubmissions_setRcloneFolder(...
 %         fileContent, localFolder, archiveFolder, timeString, ...
 %         (subFolder), (flagArchiveEqualFiles), ([]));
 % end
@@ -288,7 +251,7 @@ fprintf(1,'Figure: 8XXXXXX: FAST mode cases\n');
 % for ith_test = 1:Niterations
 %     % Call the function
 %     totalsCollected = ...
-%         fcn_CollectSubmissions_archiveChanges(...
+%         fcn_CollectSubmissions_setRcloneFolder(...
 %         fileContent, localFolder, archiveFolder, timeString, ...
 %         (subFolder), (flagArchiveEqualFiles), (-1));
 % end

@@ -2,7 +2,7 @@ function totalsCollected = ...
     fcn_CollectSubmissions_archiveChanges(fileContent, localFolder, archiveFolder, timeString, varargin)
 
 %% fcn_CollectSubmissions_archiveChanges
-%     fcn_CollectSubmissions_archiveChanges processes the changes and saved
+%     fcn_CollectSubmissions_archiveChanges processes the changes and saves
 %     archival logs of the changes into an archival directory
 %
 % FORMAT:
