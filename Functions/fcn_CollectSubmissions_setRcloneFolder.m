@@ -38,6 +38,10 @@ function rcloneFolder = fcn_CollectSubmissions_setRcloneFolder(varargin)
 % - Wrote fcn_CollectSubmissions_setRcloneFolder
 %   % * Sets the path to the local install of the rclone software based on 
 %   %   % the current computer
+%
+% 2026_01_19 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_setRcloneFolder
+%   % * Updated folder for E5-ME-L-SEBR17
 
 % TO-DO:
 %
@@ -170,6 +174,8 @@ thisComputer = getenv('COMPUTERNAME');
 switch(thisComputer)
 	case 'PROTOWERPLUS'
 		rcloneFolder = 'C:\rclone';
+	case 'E5-ME-L-SEBR17'
+		rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 	otherwise
 		warning('backtrace','on');
 		warning('Unrecognized computer being used: %s, using defaults.',thisComputer);
