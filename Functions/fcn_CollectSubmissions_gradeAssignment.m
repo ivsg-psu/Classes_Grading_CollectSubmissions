@@ -1,8 +1,8 @@
-function ungradedSubmissionTable = ...
-    fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, varargin)
+function gradedRosterTable = ...
+    fcn_CollectSubmissions_gradeAssignment(rosterTable, ungradedSubmissionTable, gradingFunction, varargin)
 
-%% fcn_CollectSubmissions_gatherSubmissionsIntoTable
-%     fcn_CollectSubmissions_gatherSubmissionsIntoTable processes changes
+%% fcn_CollectSubmissions_gradeAssignment
+%     fcn_CollectSubmissions_gradeAssignment processes changes
 %     between cloud and local mirror, collecting all submissions that match
 %     a user-defined assignment string. Each submission is loaded and its
 %     variables are copied into a table containing all the entries. NOTE:
@@ -12,7 +12,7 @@ function ungradedSubmissionTable = ...
 % FORMAT:
 %
 %      ungradedSubmissionTable = ...
-%      fcn_CollectSubmissions_gatherSubmissionsIntoTable(...
+%      fcn_CollectSubmissions_gradeAssignment(...
 %      fileContent, assignmentString, localFolder, (figNum));
 %
 % INPUTS:
@@ -61,7 +61,7 @@ function ungradedSubmissionTable = ...
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_CollectSubmissions_gatherSubmissionsIntoTable
+%     See the script: script_test_fcn_CollectSubmissions_gradeAssignment
 %     for a full test suite.
 %
 % This function was written on 2026_01_20 by S. Brennan
@@ -70,7 +70,7 @@ function ungradedSubmissionTable = ...
 % REVISION HISTORY:
 %
 % 2026_01_20 by Sean Brennan, sbrennan@psu.edu
-% - Wrote fcn_CollectSubmissions_gatherSubmissionsIntoTable
+% - Wrote fcn_CollectSubmissions_gradeAssignment
 %   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
 %   % * processes changes between cloud and local mirror, collecting all submissions that match
 %   %   % a user-defined assignment string. 
@@ -232,7 +232,7 @@ end
 sz = [1000 4]; % 1 row, 4 columns
 varTypes = {'int64', 'cell', 'cell', 'cell'};
 varNames = {'StudentNumber','answers','identifiers','timelog'};
-ungradedSubmissionTable = table('Size', sz, 'VariableTypes', varTypes, 'VariableNames', varNames);
+gradedRosterTable = table('Size', sz, 'VariableTypes', varTypes, 'VariableNames', varNames);
 
 % Which types of changes count as submissions? New ones, existing, and
 % modified ones
@@ -306,10 +306,10 @@ for ith_change = 1:length(fileContent)
 
             % Save results
             totalFound = totalFound+1;
-            ungradedSubmissionTable.('StudentNumber')(totalFound) = studentNumber;
+            gradedRosterTable.('StudentNumber')(totalFound) = studentNumber;
             for ith_variable = 1:length(variableInfo)
                 thisVariableName = variableInfo{ith_variable};
-                ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
+                gradedRosterTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
 
                 % matchingIndex = strcmp(varNames,thisVariableName);
                 % if strcmp(varTypes{matchingIndex},'cell')
@@ -376,9 +376,9 @@ for ith_change = 1:length(fileContent)
 end
 
 % Delete empty rows
-studentNumbers = ungradedSubmissionTable.('StudentNumber');
+studentNumbers = gradedRosterTable.('StudentNumber');
 emptyRows = studentNumbers==0;
-ungradedSubmissionTable(emptyRows,:) = [];
+gradedRosterTable(emptyRows,:) = [];
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -392,7 +392,7 @@ ungradedSubmissionTable(emptyRows,:) = [];
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-	disp(ungradedSubmissionTable);
+	disp(gradedRosterTable);
 
 	%  disp(assignmentString);
 	% % plot the final XY result

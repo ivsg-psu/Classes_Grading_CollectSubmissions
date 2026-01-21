@@ -6,7 +6,7 @@
 % This is a script to demonstrate the functions within the CollectSubmissions code
 % library. This code repo is typically located at:
 %
-%   https://github.com/ivsg-psu/Classes_Grading_CollectStudentSubmissions
+%   https://github.com/ivsg-psu/Classes_Grading_CollectCloudMirror
 %
 % If you have questions or comments, please contact Sean Brennan at
 % sbrennan@psu.edu
@@ -53,7 +53,7 @@
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
-%   * Use a function call to set the rclone folder for each computer config
+%   * (add items here)
 
 
 %% Make sure we are running out of root directory
@@ -171,16 +171,16 @@ disp('Welcome to the demo code for the CollectSubmissions library!')
 
 %% Create test folders
 fprintf(1,'Loading the class roster.\n');
-CSVPath = fullfile(cd,'Data','roster_2026_01_14.csv');
+CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
 emailForAddedTestStudents = 'snb10@psu.edu';
 rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create the mirror folder
-pathToMirrorFolder = fullfile(pwd,'Data','StudentSubmissions');
+pathToMirrorFolder = fullfile(pwd,'Data','CloudMirror');
 
-if 1==1
+if 1==0
     if exist(pathToMirrorFolder,'dir')
         % Remove the directory
         rmdir(pathToMirrorFolder, 's');
@@ -200,7 +200,7 @@ assert(exist(pathToMirrorFolder,'dir'));
 % Create the archive folder
 pathToArchiveFolder = fullfile(pwd,'Data','Archive');
 
-if 1==1
+if 1==0
     if exist(pathToArchiveFolder,'dir')
         % Remove the directory
         rmdir(pathToArchiveFolder, 's');
@@ -229,7 +229,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 
 rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','StudentSubmissions');
+localFolder = fullfile(pwd,'Data','CloudMirror');
 syncTime = datetime('now');
 
 % Call the function
@@ -278,7 +278,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 
 rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','StudentSubmissions');
+localFolder = fullfile(pwd,'Data','CloudMirror');
 archiveFolder = fullfile(pwd,'Data','Archive');
 syncTime = datetime('now');
 
@@ -338,7 +338,7 @@ fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 
 rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','StudentSubmissions');
+localFolder = fullfile(pwd,'Data','CloudMirror');
 archiveFolder = fullfile(pwd,'Data','Archive');
 syncTime = datetime('now');
 
@@ -352,7 +352,7 @@ flagArchiveEqualFiles = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%
 % Load the roster
-CSVPath = fullfile(cd,'Data','roster_2026_01_14.csv');
+CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
 emailForAddedTestStudents = 'snb10@psu.edu';
 rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
 

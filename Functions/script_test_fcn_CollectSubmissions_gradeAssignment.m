@@ -1,5 +1,5 @@
-% script_test_fcn_CollectSubmissions_gatherSubmissionsIntoTable
-% tests fcn_CollectSubmissions_gatherSubmissionsIntoTable
+% script_test_fcn_CollectSubmissions_gradeAssignment
+% tests fcn_CollectSubmissions_gradeAssignment
 
 % REVISION HISTORY:
 %
@@ -71,10 +71,14 @@ rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStude
 
 assignmentString = 'SUBMISSION_Week01_HW01_';
 
-%%
-% Call the function
+%%%%%%
+% Gather all results into a table
 ungradedSubmissionTable = ...
     fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, (figNum));
+
+% Call the function
+ungradedSubmissionTable = ...
+    fcn_CollectSubmissions_gradeAssignment(fileContent, assignmentString, localFolder, (figNum));
 
 % sgtitle(titleString, 'Interpreter','none');
 
