@@ -1,5 +1,5 @@
 function gradedRosterTable = ...
-    fcn_CollectSubmissions_gradeAssignment(rosterTable, ungradedSubmissionTable, gradingFunction, varargin)
+    fcn_CollectSubmissions_gradeAssignment(thisAssignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, varargin)
 
 %% fcn_CollectSubmissions_gradeAssignment
 %     fcn_CollectSubmissions_gradeAssignment processes changes
@@ -17,32 +17,13 @@ function gradedRosterTable = ...
 %
 % INPUTS:
 %
-%      fileContent: an array of strings, one for each file transfer, that
-%      lists the type of change for each file. This result is automatically
-%      populated from rclone, and the designators have the following
-%      meaning (see: https://rclone.org/commands/rclone_sync/)
+%      rosterTable: a table representing the class roster
 %
-%           = path means path was found in source and destination and was
-%           identical (no change)
+%      ungradedSubmissionTable: a table containing all the entries that
+%      were gathered
 %
-%           - path means path was missing on the source, so only in the
-%           destination (deletion in destination)
-%
-%           + path means path was missing on the destination, so only in
-%           the source (addition in destination)
-%
-%           * path means path was present in source and destination but
-%           different. (modification in destination)
-%
-%           ! path means there was an error reading or hashing the source
-%           or dest. (error in transfer)
-%
-%      assignmentString: a string denoting which assignment to check. Any
-%      assignment containing this will trigger a table entry. Typical
-%      strings are of the form: 'SUBMISSION_Week01_HW01_'
-%
-%      localFolder: a string containing the path to the folder on the
-%      local computer where the data files are stored
+%      gradingFunction: a function handle to a MATLAB function that is
+%      called to assess answers and assign grades
 %
 %      (OPTIONAL INPUTS)
 %
@@ -69,27 +50,11 @@ function gradedRosterTable = ...
 
 % REVISION HISTORY:
 %
-% 2026_01_20 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
 % - Wrote fcn_CollectSubmissions_gradeAssignment
 %   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
-%   % * processes changes between cloud and local mirror, collecting all submissions that match
-%   %   % a user-defined assignment string. 
+%   % * Grades assignments and enters results into the student roster
 
-
-%   Each submission is loaded and its
-%     variables are copied into a table containing all the entries. NOTE:
-%     this does not grade the entries, it merely collects all the data from
-%     all students into the same structure.
-
-
-%   % * This is a function that emails students to confirm submissions
-%   % * Lets users know that the file(s) were received 
-%   % * How it works:
-%   %   % * Loops through change list between cloud and local mirror, 
-%   %   % * Finds if any match an assignment string, 
-%   %   % * Checks if the user preferences indicate that confirmations are
-%   %   %   % desired.
-%   %   % * Sends confirmation emails to the associated emails 
 
 % TO-DO:
 %
@@ -103,7 +68,7 @@ function gradedRosterTable = ...
 % Check if flag_max_speed set. This occurs if the figNum variable input
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
-MAX_NARGIN = 4; % The largest Number of argument inputs to the function
+MAX_NARGIN = 5; % The largest Number of argument inputs to the function
 flag_max_speed = 0; % The default. This runs code with all error checking
 if (nargin==MAX_NARGIN && isequal(varargin{end},-1))
 	flag_do_debug = 0; % Flag to plot the results for debugging
@@ -148,16 +113,16 @@ if 0==flag_max_speed
 		% Are there the right number of inputs?
 		narginchk(MAX_NARGIN-1,MAX_NARGIN);
 
-		% Check the fileContent to be sure it is a string
-		fcn_DebugTools_checkInputsToFunctions(fileContent, '_of_strings');
-
-		% Check the assignmentString to be sure it is a string or char
-		fcn_DebugTools_checkInputsToFunctions(assignmentString, '_of_char_strings');
-
-		% Check the localFolder to be sure it is a string or char and a
-        % folder
-		fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
-        fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
+		% % Check the rosterTable to be sure it is a string
+		% fcn_DebugTools_checkInputsToFunctions(rosterTable, '_of_strings');
+		% 
+		% % Check the ungradedSubmissionTable to be sure it is a string or char
+		% fcn_DebugTools_checkInputsToFunctions(ungradedSubmissionTable, '_of_char_strings');
+		% 
+		% % Check the gradingFunction to be sure it is a string or char and a
+        % % folder
+		% fcn_DebugTools_checkInputsToFunctions(gradingFunction, '_of_char_strings');
+        % fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
         
 		% Check the assignmentString to be sure it is a text style and a folder
 		% fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
@@ -222,163 +187,94 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Check and prep folder
-tempFolder = fullfile(pwd,'Temp');
-if ~exist(tempFolder,'dir')
-    fcn_DebugTools_makeDirectory(tempFolder);
+% Prep gradedRosterTable output
+gradedRosterTable = rosterTable;
+rosterNumbers = rosterTable.('CanvasIDNumber');
+
+thisAssignmentGradeString = cat(2,thisAssignmentString,'Score');
+thisAssignmentCommentsString = cat(2,thisAssignmentString,'Comments');
+
+
+% Loop through all the ungradedSubmissionTable rows, grading each
+for ith_row = 1:height(ungradedSubmissionTable)
+	thisNumber = ungradedSubmissionTable.('StudentNumber')(ith_row);
+	
+	rosterRow = find(rosterNumbers==thisNumber);
+	if isempty(rosterRow)
+		error('Unable to find student with this number: %.0f in the roster!', thisNumber);
+	end
+
+	rosterRowThisNumber = rosterTable(rosterRow,:);
+	thisAnswers = ungradedSubmissionTable.('answers')(ith_row);	
+	thisAnswerCellArray = thisAnswers{1};
+	[percent, comments] = gradingFunction(thisAnswerCellArray);
+
+
+	% Update the roster?
+	if 1==1
+		% Check student number
+		thisAnswerStudentNumber = str2double(thisAnswerCellArray{1});
+		thisAnswerEmail = thisAnswerCellArray{5};
+		rosterStudentNumber = rosterRowThisNumber.('CanvasIDNumber');
+		rosterEmail = rosterRowThisNumber.('PSUEmail');
+
+		% Check for bad entries
+		flagBadEntry = 0;		
+		if thisAnswerStudentNumber~=thisNumber
+			flagBadEntry = 1;
+		end
+		if rosterStudentNumber~=thisNumber
+			flagBadEntry = 1;
+		end
+		if ~strcmpi(rosterEmail, thisAnswerEmail)
+			flagBadEntry = 1;			
+		end
+		if 1==flagBadEntry
+			percent = 0;
+			comments = {'Student number or PSU email did not match. Zero grade'};
+		else
+
+			% Student-given full name
+			thisAnswerStudentFullName = thisAnswerCellArray{2};
+			gradedRosterTable.('StudentGivenFullName')(rosterRow) = {thisAnswerStudentFullName};
+
+			% Student-given single name
+			thisAnswerStudentSingleName = thisAnswerCellArray{3};
+			gradedRosterTable.('StudentGivenSingleName')(rosterRow) = {thisAnswerStudentSingleName};
+
+			% Student-given sounds name
+			thisAnswerStudentSoundsName = thisAnswerCellArray{4};
+			gradedRosterTable.('StudentGivenSingleName')(rosterRow) = {thisAnswerStudentSoundsName};
+
+			% Student-given contact email
+			thisAnswerStudentContactEmail= thisAnswerCellArray{6};
+			gradedRosterTable.('StudentGivenContactEmail')(rosterRow) = {thisAnswerStudentContactEmail};
+
+			% Student-given confirmation preferences for submisison
+			thisAnswerPreferencesSubmission= str2double(thisAnswerCellArray{7});
+			gradedRosterTable.('PreferencesConfirmSubmission')(rosterRow) = {thisAnswerPreferencesSubmission};
+
+			% Student-given confirmation preferences for grading
+			thisAnswerPreferencesGrading= str2double(thisAnswerCellArray{8});
+			gradedRosterTable.('PreferencesConfirmGrading')(rosterRow) = {thisAnswerPreferencesGrading};
+
+			% Student-given confirmation preferences for info
+			thisAnswerPreferencesIdentifiers= str2double(thisAnswerCellArray{9});
+			gradedRosterTable.('PreferencesConfirmIdentifiers')(rosterRow) = {thisAnswerPreferencesIdentifiers};
+
+			% Favorite vehicle
+			thisAnswerFavoriteVehicle= thisAnswerCellArray{10};
+			gradedRosterTable.('FavoriteVehicle')(rosterRow) = {thisAnswerFavoriteVehicle};
+
+
+		end
+
+	end
+
+	gradedRosterTable.(thisAssignmentGradeString)(rosterRow) = {percent};
+	gradedRosterTable.(thisAssignmentCommentsString)(rosterRow) = {comments};
+	
 end
-
-% Create a table with 1000 rows to start. We'll delete empty ones later
-sz = [1000 4]; % 1 row, 4 columns
-varTypes = {'int64', 'cell', 'cell', 'cell'};
-varNames = {'StudentNumber','answers','identifiers','timelog'};
-gradedRosterTable = table('Size', sz, 'VariableTypes', varTypes, 'VariableNames', varNames);
-
-% Which types of changes count as submissions? New ones, existing, and
-% modified ones
-changesToLog = {'+'; '='; '*'};
-
-% Initialize counts
-totalFound = 0;
-
-% Loop through all the changes, checking to see which ones contain an
-% addition (+) that has the assignmentString within the addition. Extract
-% the student info from the change, and then email the student to confirm.
-for ith_change = 1:length(fileContent)
-	thisChange = fileContent(ith_change);
-    thisChangeCharArray = char(thisChange);
-    if ~isempty(thisChangeCharArray) && contains(thisChangeCharArray,assignmentString)
-        changeToProcess = thisChangeCharArray(3:end);
-        if any(strcmp(thisChangeCharArray(1),changesToLog))  
-
-            % Extract the student number at start
-            studentNumberStringAtStart = extractBefore(changeToProcess,'/');            
-            studentNumberAtStart = str2double(studentNumberStringAtStart);
-
-            % Extract zip file name
-            zipFileName = extractAfter(changeToProcess,'/');
-
-            % Extract the student number at end
-            studentNumberStringAtEnd = extractBetween(zipFileName,assignmentString,'.zip');
-            studentNumberAtEnd = str2double(studentNumberStringAtEnd);
-
-
-
-            if studentNumberAtEnd~=studentNumberAtStart
-                error('Student folder number does not match submission number?!\n\tFolder number: %.0f\n\tStudent number on submission: %.0f\n', studentNumberAtStart, studentNumberAtEnd)
-            end
-
-            studentNumber = studentNumberAtStart;
-
-            %%%%%%%%%%%%
-            % Extract contents
-            fileToUnzip = fullfile(localFolder,sprintf('%07.0f',studentNumber), zipFileName);
-
-            % Make sure file esists
-            if ~exist(fileToUnzip,'file')
-                error('Unable to find changed file in local directory. Seeking file: \n\t%s\n',fileToUnzip);
-            end
-            
-            % Make sure temp folder is empty
-            contentsInFolder = dir(fullfile(tempFolder,'*.*')); % Query temp folder        
-            filesInFolder = contentsInFolder(~[contentsInFolder.isdir]); % Filter out directories from the list
-
-
-            if ~isempty(filesInFolder)
-                currentFolder = pwd;
-                cd('Temp');
-                delete('*.*');
-                cd(currentFolder);
-            end
-            
-            % Unzip contents
-            unzip(fileToUnzip,tempFolder);
-
-            % Make sure 'localVariables.mat' is created
-            solutionsMatFile = fullfile(tempFolder,'localVariables.mat');
-            if ~exist(solutionsMatFile,'file')
-                error('Unable to find a localVAriables file in a zip extraction. Offending zip file: \n\t%s\n', fileToUnzip);
-            end
-
-            % Grab the variables
-            variableInfo = who('-file', solutionsMatFile);
-            load(solutionsMatFile, variableInfo{:});
-
-            % Save results
-            totalFound = totalFound+1;
-            gradedRosterTable.('StudentNumber')(totalFound) = studentNumber;
-            for ith_variable = 1:length(variableInfo)
-                thisVariableName = variableInfo{ith_variable};
-                gradedRosterTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
-
-                % matchingIndex = strcmp(varNames,thisVariableName);
-                % if strcmp(varTypes{matchingIndex},'cell')
-                %     ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
-                % else
-                %     ungradedSubmissionTable.(thisVariableName)(totalFound) = eval(thisVariableName);
-                % end
-            end
-
-
-
-
-            % % Get student details
-            % studentEmail = ungradedSubmissionTable.('PSUEmail'){studentRowNumber};
-            % studentName = ungradedSubmissionTable.('FullName'){studentRowNumber};
-            % 
-            % % For debugging
-            % if 1==1
-            %     studentEmail = 'snb10@psu.edu';
-            % end
-            % 
-            % entryAfterNumberString = extractAfter(changeToProcess, '/');
-            % 
-            % % Send email?
-            % thisStudentReceivedConfirmation = ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber);
-            % 
-            % if ~thisStudentReceivedConfirmation && notificationPreferences(studentRowNumber)
-            % 
-            %     recipient = studentEmail;
-            %     subject = sprintf('ME452: automated confirmation of assignment submission %s',assignmentString);
-            %     body = [...
-            %         sprintf('This email is being sent automatically by the ME452 assignment manager to confirm that the following submission was received:') 10 10 ...
-            %         sprintf('Assignment name: %s.',entryAfterNumberString) 10 ...
-            %         sprintf('Student number: %.0f.',studentNumberAtStart) 10 ...
-            %         sprintf('Student name: %s.',studentName) 10 ...
-            %         sprintf('Student email: %s.',studentEmail) 10 ...
-            %         ];
-            % 
-            %     % Attachments:
-            %     % if 1==0
-            %     % 	st = dbstack; %#ok<*UNRCH>
-            %     % 	scriptPath = which(st.file);
-            %     % 	scriptName = st.file;
-            %     % 	functionName = extractAfter(scriptName,'script_test_');
-            %     % 	functionPath = which(functionName);
-            %     % else
-            %     % 	scriptPath = which('script_test_fcn_LoadRoster_sendEmail');
-            %     % 	functionPath = which('fcn_LoadRoster_sendEmail');
-            %     % end
-            %     % attachments = {scriptPath, functionPath};
-            %     % fcn_LoadRoster_sendEmail( recipient, subject, body, attachments, (figNum))
-            % 
-            %     % Send the email
-            %     fcn_LoadRoster_sendEmail( recipient, subject, body,{})
-            %     ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber) = true;
-            % 
-            %     totalFound = totalFound+1;
-            % 
-            % 
-            % end
-
-        end % if statement for addition only
-    end % Ends if statement check for empty change and changes that contain assignment string
-end
-
-% Delete empty rows
-studentNumbers = gradedRosterTable.('StudentNumber');
-emptyRows = studentNumbers==0;
-gradedRosterTable(emptyRows,:) = [];
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

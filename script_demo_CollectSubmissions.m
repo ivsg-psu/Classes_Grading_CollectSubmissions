@@ -321,9 +321,9 @@ assert(isequal(size(totalsCollected.totalErrored),[1 1]));
 % % Make sure plot opened up
 % assert(isequal(get(gcf,'Number'),figNum));
 
-%% fcn_CollectSubmissions_confirmSubmissions
+%% fcn_CollectSubmissions_gradeAssignment
 figNum = 10003;
-titleString = sprintf(fcn_CollectSubmissions_confirmSubmissions');
+titleString = sprintf('fcn_CollectSubmissions_gradeAssignment');
 fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 % figure(figNum); clf;
 
@@ -356,6 +356,36 @@ CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
 emailForAddedTestStudents = 'snb10@psu.edu';
 rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
 
+
+assignmentString = 'SUBMISSION_Week01_HW01_';
+
+%%%%%%
+% Gather all results into a table
+ungradedSubmissionTable = ...
+    fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, (figNum));
+
+%%%%%
+%  Call the function
+gradingFunction = @fcn_INTERNAL_gradeAssignment;
+thisAssignmentString = 'Week01_HW01';
+
+gradedRosterTable = ...
+    fcn_CollectSubmissions_gradeAssignment(thisAssignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, (figNum));
+
+% sgtitle(titleString, 'Interpreter','none');
+
+% Check variable types
+assert(istable(gradedRosterTable));
+
+% Check variable sizes
+assert(height(gradedRosterTable) == height(rosterTable));
+
+
+
+%% fcn_CollectSubmissions_confirmSubmissions
+figNum = 10004;
+titleString = sprintf('fcn_CollectSubmissions_confirmSubmissions');
+fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
 
 assignmentString = '';
 
