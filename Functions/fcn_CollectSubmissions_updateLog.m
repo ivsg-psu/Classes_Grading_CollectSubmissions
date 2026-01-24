@@ -65,6 +65,11 @@ function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, fl
 %
 % 2026_01_09 by Sean Brennan, sbrennan@psu.edu
 % - wrote the code originally, using breakDataIntoLaps as starter
+%
+% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Added plotting of results
+%   % * Added automatic header if new log is being made
 
 % TO-DO:
 %
@@ -207,6 +212,11 @@ line_of_data = sprintf('%s,  %s, %s, %s, %s, %s, %.0f, %.0f, %.0f, %.0f, %.0f', 
     totalsCollected.totalErrored ...
     );
 
+% Print header?
+if ~exist(logFile,'file')
+	header = sprintf('timeString,  posixTimeString, prettyTimeString, processDuration, flagWasSuccessful, subfolder, totalSame, totalAdded, totalDeleted, totalModified, totalErrored');
+	writelines(header, logFile, WriteMode="append")
+end
 writelines(line_of_data, logFile, WriteMode="append")
 
 %% Plot the results (for debugging)?
@@ -221,7 +231,57 @@ writelines(line_of_data, logFile, WriteMode="append")
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-    fprintf(1,'File line result: \n\t%s\n', line_of_data);
+	fprintf(1,'File line result: \n\t%s\n', line_of_data);
+
+	% Plot the logfile
+	% Detect options and set types (example: make "Date" datetime, "ID" categorical)
+	opts = detectImportOptions(logFile);
+	T = readtable(logFile, opts);
+	T.Timestamp = datetime(T.posixTimeString, ...
+		'ConvertFrom','posixtime', ...
+		'TimeZone','UTC');   % specify timezone if known
+	T.Timestamp.Format = 'yyyy-MM-dd HH:mm:ss';   % display format
+
+	timeOfData = T.Timestamp;
+	same = T.totalSame;
+	added = T.totalAdded;
+	deleted = T.totalDeleted;
+	modified = T.totalModified;
+	errored = T.totalErrored;
+
+	figure(figNum);
+	hold on;
+	ax = gca;
+	hasPlot = ~isempty(ax.Children);   % true if any graphics objects exist
+
+	if ~hasPlot
+		h_same     = plot(timeOfData,same,'.-','Linewidth',3,'Color',[0 0 0],'DisplayName','Same');
+		h_added    = plot(timeOfData,added,'.-','Linewidth',3,'Color',[0 1 0], 'DisplayName','Added');
+		h_deleted  = plot(timeOfData,deleted,'.-','Linewidth',3,'Color',[1 0 0], 'DisplayName','Deleted');
+		h_modified = plot(timeOfData,modified,'.-','Linewidth',3,'Color',[0 0 1], 'DisplayName','Modified');
+		h_errored  = plot(timeOfData,errored,'.-','Linewidth',6,'Color',[1 0 0], 'DisplayName','Errored');
+		legend('Interpreter','none','Location','best');
+		xlabel('Timestamp');
+		ylabel('Totals');
+		grid on;
+				
+		allHandles.h_same = h_same;
+		allHandles.h_added = h_added;
+		allHandles.h_deleted = h_deleted;
+		allHandles.h_modified = h_modified;
+		allHandles.h_errored = h_errored;
+
+		set(figNum, 'UserData', allHandles)
+	else
+		allHandles = get(figNum, 'UserData');
+		set(allHandles.h_same,'XData',timeOfData,'YData',same);
+		set(allHandles.h_added,'XData',timeOfData,'YData',added);
+		set(allHandles.h_deleted,'XData',timeOfData,'YData',deleted);
+		set(allHandles.h_modified,'XData',timeOfData,'YData',modified);
+		set(allHandles.h_errored,'XData',timeOfData,'YData',errored);
+
+	end
+
  
     %  disp(rosterTable);
     % % plot the final XY result
