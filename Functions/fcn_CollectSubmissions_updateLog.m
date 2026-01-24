@@ -70,6 +70,10 @@ function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, fl
 % - In fcn_CollectSubmissions_updateLog
 %   % * Added plotting of results
 %   % * Added automatic header if new log is being made
+%
+% 2026_01_24 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Changed plot style to see locations of data collection
 
 % TO-DO:
 %
@@ -255,11 +259,11 @@ if flag_do_plots
 	hasPlot = ~isempty(ax.Children);   % true if any graphics objects exist
 
 	if ~hasPlot
-		h_same     = plot(timeOfData,same,'.-','Linewidth',3,'Color',[0 0 0],'DisplayName','Same');
-		h_added    = plot(timeOfData,added,'.-','Linewidth',3,'Color',[0 1 0], 'DisplayName','Added');
-		h_deleted  = plot(timeOfData,deleted,'.-','Linewidth',3,'Color',[1 0 0], 'DisplayName','Deleted');
-		h_modified = plot(timeOfData,modified,'.-','Linewidth',3,'Color',[0 0 1], 'DisplayName','Modified');
-		h_errored  = plot(timeOfData,errored,'.-','Linewidth',6,'Color',[1 0 0], 'DisplayName','Errored');
+		h_same     = plot(timeOfData,same,'.-','Linewidth',3, 'MarkerSize',20,'Color',[0 0 0],'DisplayName','Same');
+		h_added    = plot(timeOfData,added,'.-','Linewidth',3, 'MarkerSize',20,'Color',[0 1 0], 'DisplayName','Added');
+		h_deleted  = plot(timeOfData,deleted,'.-','Linewidth',3, 'MarkerSize',20,'Color',[1 0 0], 'DisplayName','Deleted');
+		h_modified = plot(timeOfData,modified,'.-','Linewidth',3, 'MarkerSize',20,'Color',[0 0 1], 'DisplayName','Modified');
+		h_errored  = plot(timeOfData,errored,'.-','Linewidth',6, 'MarkerSize',20,'Color',[1 0 0], 'DisplayName','Errored');
 		legend('Interpreter','none','Location','best');
 		xlabel('Timestamp');
 		ylabel('Totals');
@@ -283,119 +287,7 @@ if flag_do_plots
 	end
 
  
-    %  disp(rosterTable);
-    % % plot the final XY result
-    % figure(figNum);
-    % clf;
-    %
-    % % Everything put together
-    % subplot(1,2,1);
-    % hold on;
-    % grid on
-    % title('Results of breaking data into laps');
-    %
-    %
-    %
-    % % Plot the indices per lap
-    % all_ones = ones(length(input_path(:,1)),1);
-    %
-    % % fill in data
-    % start_of_lap_x = [];
-    % start_of_lap_y = [];
-    % lap_x = [];
-    % lap_y = [];
-    % end_of_lap_x = [];
-    % end_of_lap_y = [];
-    % for ith_lap = 1:Nlaps
-    %     start_of_lap_x = [start_of_lap_x; cell_array_of_entry_indices{ith_lap}; NaN]; %#ok<AGROW>
-    %     start_of_lap_y = [start_of_lap_y; all_ones(cell_array_of_entry_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-    %     lap_x = [lap_x; cell_array_of_lap_indices{ith_lap}; NaN]; %#ok<AGROW>
-    %     lap_y = [lap_y; all_ones(cell_array_of_lap_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-    %     end_of_lap_x = [end_of_lap_x; cell_array_of_exit_indices{ith_lap}; NaN]; %#ok<AGROW>
-    %     end_of_lap_y = [end_of_lap_y; all_ones(cell_array_of_exit_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-    % end
-    %
-    % % Plot results
-    % plot(start_of_lap_x,start_of_lap_y,'g-','Linewidth',3,'DisplayName','Prelap');
-    % plot(lap_x,lap_y,'b-','Linewidth',3,'DisplayName','Lap');
-    % plot(end_of_lap_x,end_of_lap_y,'r-','Linewidth',3,'DisplayName','Postlap');
-    %
-    % h_legend = legend;
-    % set(h_legend,'AutoUpdate','off');
-    %
-    % xlabel('Indices');
-    % ylabel('Lap number');
-    % axis([0 length(input_path(:,1)) 0 Nlaps+0.5]);
-    %
-    %
-    % subplot(1,2,2);
-    % % Plot the XY coordinates of the traversals
-    % hold on;
-    % grid on
-    % title('Results of breaking data into laps');
-    % axis equal
-    %
-    % cellArrayOfPathsToPlot = cell(Nlaps+1,1);
-    % cellArrayOfPathsToPlot{1,1}     = input_path;
-    % for ith_lap = 1:Nlaps
-    %     temp_indices = cell_array_of_lap_indices{ith_lap};
-    %     if length(temp_indices)>1
-    %         dummy_path = input_path(temp_indices,:);
-    %     else
-    %         dummy_path = [];
-    %     end
-    %     cellArrayOfPathsToPlot{ith_lap+1,1} = dummy_path;
-    % end
-    % h = fcn_Laps_plotLapsXY(cellArrayOfPathsToPlot,figNum);
-    %
-    % % Make input be thin line
-    % set(h(1),'Color',[0 0 0],'Marker','none','Linewidth', 0.75);
-    %
-    % % Make all the laps have thick lines
-    % for ith_plot = 2:(length(h))
-    %     set(h(ith_plot),'Marker','none','Linewidth', 5);
-    % end
-    %
-    % % Add legend
-    % legend_text = {};
-    % legend_text = [legend_text, 'Input path'];
-    % for ith_lap = 1:Nlaps
-    %     legend_text = [legend_text, sprintf('Lap %d',ith_lap)]; %#ok<AGROW>
-    % end
-    %
-    % h_legend = legend(legend_text);
-    % set(h_legend,'AutoUpdate','off');
-    %
-    %
-    %
-    % %     % Plot the start, excursion, and end conditions
-    % %     % Start point in green
-    % %     if flag_start_is_a_point_type==1
-    % %         Xcenter = start_zone_definition(1,1);
-    % %         Ycenter = start_zone_definition(1,2);
-    % %         radius  = start_zone_definition(1,3);
-    % %         INTERNAL_plot_circle(Xcenter, Ycenter, radius, [0 .7 0], 4);
-    % %     end
-    % %
-    % %     % End point in red
-    % %     if flag_end_is_a_point_type==1
-    % %         Xcenter = end_definition(1,1);
-    % %         Ycenter = end_definition(1,2);
-    % %         radius  = end_definition(1,3);
-    % %         INTERNAL_plot_circle(Xcenter, Ycenter, radius, [0.7 0 0], 2);
-    % %     end
-    % %     legend_text = [legend_text, 'Start condition'];
-    % %     legend_text = [legend_text, 'End condition'];
-    % %     h_legend = legend(legend_text);
-    % %     set(h_legend,'AutoUpdate','off');
-    %
-    % % Plot start zone
-    % h_start_zone = fcn_Laps_plotZoneDefinition(start_zone_definition,'g-',figNum);
-    %
-    % % Plot end zone
-    % h_end_zone = fcn_Laps_plotZoneDefinition(end_zone_definition,'r-',figNum);
-    %
-    %
+   
 end
 
 if flag_do_debug
