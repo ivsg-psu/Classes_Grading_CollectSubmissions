@@ -174,6 +174,8 @@ thisComputer = getenv('COMPUTERNAME');
 switch(thisComputer)
 	case 'PROTOWERPLUS'
 		rcloneFolder = 'C:\rclone';
+    case 'E5-ME-SEBR02'
+		rcloneFolder = 'C:\rclone\rclone-v1.72.1-windows-amd64';
 	case 'E5-ME-L-SEBR17'
 		rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 	otherwise
