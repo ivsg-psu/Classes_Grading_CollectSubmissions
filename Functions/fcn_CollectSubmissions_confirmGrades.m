@@ -1,17 +1,16 @@
 function updatedRosterTable = ...
-	fcn_CollectSubmissions_confirmSubmissions(fileContent, rosterTable, varargin)
+	fcn_CollectSubmissions_confirmGrades(fileContent, rosterTable, varargin)
 
-%% fcn_CollectSubmissions_confirmSubmissions
-%     fcn_CollectSubmissions_confirmSubmissions processes changes between
+%% fcn_CollectSubmissions_confirmGrades
+%     fcn_CollectSubmissions_confirmGrades processes changes between
 %     cloud and local mirror, finds if any match an assignment string, and
-%     sends confirmation emails to the associated emails that the file(s)
-%     were received if the user preferences indicate that confirmations are
-%     desired.
+%     sends grade-summary emails to the associated emails, if the user
+%     preferences indicate that confirmations are desired.
 %
 % FORMAT:
 %
 %      totalsCollected = ...
-%      fcn_CollectSubmissions_confirmSubmissions(...
+%      fcn_CollectSubmissions_confirmGrades(...
 %      fileContent, rosterTable, (assignmentString), (figNum));
 %
 % INPUTS:
@@ -60,7 +59,7 @@ function updatedRosterTable = ...
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_CollectSubmissions_confirmSubmissions
+%     See the script: script_test_fcn_CollectSubmissions_confirmGrades
 %     for a full test suite.
 %
 % This function was written on 2026_01_16 by S. Brennan
@@ -68,24 +67,16 @@ function updatedRosterTable = ...
 
 % REVISION HISTORY:
 %
-% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
-% - Wrote fcn_CollectSubmissions_confirmSubmissions
-%   % * Used archiveChanges as starter
-%   % * This is a function that emails students to confirm submissions
-%   % * Lets users know that the file(s) were received 
+% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
+% - Wrote fcn_CollectSubmissions_confirmGrades
+%   % * Used confirmSubmissions as starter
+%   % * This is a function that emails students to let them know grades
 %   % * How it works:
 %   %   % * Loops through change list between cloud and local mirror, 
 %   %   % * Finds if any match an assignment string, 
-%   %   % * Checks if the user preferences indicate that confirmations are
+%   %   % * Checks if the user preferences indicate that grades are
 %   %   %   % desired.
-%   %   % * Sends confirmation emails to the associated emails 
-%
-% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
-% - In fcn_CollectSubmissions_confirmSubmissions
-%   % * Updated to use correct preferences field
-%   % * Updated to send verifications on modification AND addition
-%   % * Fixed bug where PSU email used, not preferred email. Now using
-%   %   % preferred email.
+%   %   % * Sends summary emails to the associated emails 
 
 % TO-DO:
 %
@@ -220,14 +211,14 @@ CanvasIDNumbers = updatedRosterTable.CanvasIDNumber;
 
 % Check if there are user preferences in the table. If so, use these. If
 % not, set all preferences to "true"
-if ~ismember('PreferencesConfirmSubmission',updatedRosterTable.Properties.VariableNames)
+if ~ismember('PreferencesConfirmGrading',updatedRosterTable.Properties.VariableNames)
 	notificationPreferences = true(height(updatedRosterTable),1);
 else
-	notificationPreferences = updatedRosterTable.('PreferencesConfirmSubmission');
+	notificationPreferences = updatedRosterTable.('PreferencesConfirmGrading');
 end
 
 % Check to see if email flag column already exists. If not, create it
-emailVerificationColumnName = cat(2,assignmentString,'_confSent');
+emailVerificationColumnName = cat(2,assignmentString,'_gradesSent');
 if ~ismember(emailVerificationColumnName,updatedRosterTable.Properties.VariableNames)
 	% Add a single logical flag column (all false)
 	updatedRosterTable.(emailVerificationColumnName) = false(height(updatedRosterTable),1);
@@ -251,6 +242,19 @@ for ith_change = 1:length(fileContent)
 				studentEmail = updatedRosterTable.('StudentGivenContactEmail'){studentRowNumber};
 				studentName = updatedRosterTable.('FullName'){studentRowNumber};
 
+				% Get assignment results
+				gradingName = cat(2,assignmentString,'Score');
+				if ~ismember(gradingName,updatedRosterTable.Properties.VariableNames)
+					error('Unable to find grading column: %s',gradingName);
+				end
+				gradingComments = cat(2,assignmentString,'Comments');
+				if ~ismember(gradingComments,updatedRosterTable.Properties.VariableNames)
+					error('Unable to find comments column: %s',gradingComments);
+				end
+				studentGrade = updatedRosterTable.(gradingName){studentRowNumber};
+				studentComments = updatedRosterTable.(gradingComments){studentRowNumber};
+
+
 				% Check for weird cases
 				if isempty(studentRowNumber)
 					warning('backtrace','on');
@@ -265,7 +269,7 @@ for ith_change = 1:length(fileContent)
 
 				% For debugging
 				if 1==0
-					studentEmail = 'snb10@psu.edu';
+					studentEmail = 'snb10+ME452@psu.edu';
 				end
 
 				entryAfterNumberString = extractAfter(changeToProcess, '/');
@@ -276,14 +280,21 @@ for ith_change = 1:length(fileContent)
 				if studentWantsNotification
 
 					recipient = studentEmail;
-					subject = sprintf('ME452: automated confirmation of assignment submission %s',assignmentString);
+					subject = sprintf('ME452: automated grading results for assignment submission %s',assignmentString);
 					body = [...
-						sprintf('This email is being sent automatically by the ME452 assignment manager to confirm that the following submission was received:') 10 10 ...
+						sprintf('This email is being sent automatically by the ME452 assignment manager to provide the grading details for the following submission:') 10 10 ...
 						sprintf('Assignment name: %s.',entryAfterNumberString) 10 ...
 						sprintf('Student number: %.0f.',studentNumber) 10 ...
 						sprintf('Student name: %s.',studentName) 10 ...
-						sprintf('Student email: %s.',studentEmail) 10 ...
+						sprintf('Student email: %s.',studentEmail) 10 10 ...
+						sprintf('Grading Details: ') 10 ...
+						sprintf('   Assignment grade: %.2f percent', studentGrade*100) 10 ...
+						sprintf('   Assignment comments:') 10 ...
 						];
+					for ith_comment = 1:length(studentComments)
+						body = [body sprintf('        %s', studentComments{ith_comment}) 10]; %#ok<AGROW>
+					end
+						
 
 					% Attachments:
 					% if 1==0
@@ -328,119 +339,6 @@ end
 if flag_do_plots
 	fprintf(1,'totalEmailed:     %.0f\n', totalEmailed);
 
-	%  disp(rosterTable);
-	% % plot the final XY result
-	% figure(figNum);
-	% clf;
-	%
-	% % Everything put together
-	% subplot(1,2,1);
-	% hold on;
-	% grid on
-	% title('Results of breaking data into laps');
-	%
-	%
-	%
-	% % Plot the indices per lap
-	% all_ones = ones(length(input_path(:,1)),1);
-	%
-	% % fill in data
-	% start_of_lap_x = [];
-	% start_of_lap_y = [];
-	% lap_x = [];
-	% lap_y = [];
-	% end_of_lap_x = [];
-	% end_of_lap_y = [];
-	% for ith_lap = 1:Nlaps
-	%     start_of_lap_x = [start_of_lap_x; cell_array_of_entry_indices{ith_lap}; NaN]; %#ok<AGROW>
-	%     start_of_lap_y = [start_of_lap_y; all_ones(cell_array_of_entry_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-	%     lap_x = [lap_x; cell_array_of_lap_indices{ith_lap}; NaN]; %#ok<AGROW>
-	%     lap_y = [lap_y; all_ones(cell_array_of_lap_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-	%     end_of_lap_x = [end_of_lap_x; cell_array_of_exit_indices{ith_lap}; NaN]; %#ok<AGROW>
-	%     end_of_lap_y = [end_of_lap_y; all_ones(cell_array_of_exit_indices{ith_lap})*ith_lap; NaN]; %#ok<AGROW>;
-	% end
-	%
-	% % Plot results
-	% plot(start_of_lap_x,start_of_lap_y,'g-','Linewidth',3,'DisplayName','Prelap');
-	% plot(lap_x,lap_y,'b-','Linewidth',3,'DisplayName','Lap');
-	% plot(end_of_lap_x,end_of_lap_y,'r-','Linewidth',3,'DisplayName','Postlap');
-	%
-	% h_legend = legend;
-	% set(h_legend,'AutoUpdate','off');
-	%
-	% xlabel('Indices');
-	% ylabel('Lap number');
-	% axis([0 length(input_path(:,1)) 0 Nlaps+0.5]);
-	%
-	%
-	% subplot(1,2,2);
-	% % Plot the XY coordinates of the traversals
-	% hold on;
-	% grid on
-	% title('Results of breaking data into laps');
-	% axis equal
-	%
-	% cellArrayOfPathsToPlot = cell(Nlaps+1,1);
-	% cellArrayOfPathsToPlot{1,1}     = input_path;
-	% for ith_lap = 1:Nlaps
-	%     temp_indices = cell_array_of_lap_indices{ith_lap};
-	%     if length(temp_indices)>1
-	%         dummy_path = input_path(temp_indices,:);
-	%     else
-	%         dummy_path = [];
-	%     end
-	%     cellArrayOfPathsToPlot{ith_lap+1,1} = dummy_path;
-	% end
-	% h = fcn_Laps_plotLapsXY(cellArrayOfPathsToPlot,figNum);
-	%
-	% % Make input be thin line
-	% set(h(1),'Color',[0 0 0],'Marker','none','Linewidth', 0.75);
-	%
-	% % Make all the laps have thick lines
-	% for ith_plot = 2:(length(h))
-	%     set(h(ith_plot),'Marker','none','Linewidth', 5);
-	% end
-	%
-	% % Add legend
-	% legend_text = {};
-	% legend_text = [legend_text, 'Input path'];
-	% for ith_lap = 1:Nlaps
-	%     legend_text = [legend_text, sprintf('Lap %d',ith_lap)]; %#ok<AGROW>
-	% end
-	%
-	% h_legend = legend(legend_text);
-	% set(h_legend,'AutoUpdate','off');
-	%
-	%
-	%
-	% %     % Plot the start, excursion, and end conditions
-	% %     % Start point in green
-	% %     if flag_start_is_a_point_type==1
-	% %         Xcenter = start_zone_definition(1,1);
-	% %         Ycenter = start_zone_definition(1,2);
-	% %         radius  = start_zone_definition(1,3);
-	% %         INTERNAL_plot_circle(Xcenter, Ycenter, radius, [0 .7 0], 4);
-	% %     end
-	% %
-	% %     % End point in red
-	% %     if flag_end_is_a_point_type==1
-	% %         Xcenter = end_definition(1,1);
-	% %         Ycenter = end_definition(1,2);
-	% %         radius  = end_definition(1,3);
-	% %         INTERNAL_plot_circle(Xcenter, Ycenter, radius, [0.7 0 0], 2);
-	% %     end
-	% %     legend_text = [legend_text, 'Start condition'];
-	% %     legend_text = [legend_text, 'End condition'];
-	% %     h_legend = legend(legend_text);
-	% %     set(h_legend,'AutoUpdate','off');
-	%
-	% % Plot start zone
-	% h_start_zone = fcn_Laps_plotZoneDefinition(start_zone_definition,'g-',figNum);
-	%
-	% % Plot end zone
-	% h_end_zone = fcn_Laps_plotZoneDefinition(end_zone_definition,'r-',figNum);
-	%
-	%
 end
 
 if flag_do_debug
@@ -461,51 +359,3 @@ end % Ends main function
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
-
-% %% fcn_INTERNAL_processChange
-% function fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString)
-%
-% % Break the change into parts, either folders or files
-% folderBreaks = find(changeToProcess == '/', 1);
-% if ~isempty(folderBreaks)
-%     output_cell_array = split(changeToProcess, '/');
-% else
-%     output_cell_array{1} = changeToProcess;
-% end
-%
-% % Build the path to the source
-% sourceString = localFolder;
-% for ith_cell = 1:length(output_cell_array)
-%     sourceString = fullfile(sourceString,output_cell_array{ith_cell});
-% end
-% [~,name,ext] = fileparts(sourceString);
-%
-% newName = cat(2,name,suffixString,ext);
-%
-% % Build the path to the destination, building the path up to the new name
-% % but not including the name
-% destinationPathString = archiveFolder;
-% for ith_cell = 1:length(output_cell_array)-1
-%     destinationPathString = fullfile(destinationPathString,output_cell_array{ith_cell});
-% end
-%
-% % Make the directory, if it does not exist
-% if ~exist(destinationPathString,'dir')
-%     fcn_DebugTools_makeDirectory(destinationPathString,-1);
-% end
-%
-% % Copy the file or touch the file?
-% destinationString = fullfile(destinationPathString,newName);
-% if strcmp(suffixString(end-3:end),'_rem') || strcmp(suffixString(end-3:end),'_err')
-%     % File was deleted or an error occurred. Touch the file name to log.
-%     fcn_DebugTools_fileTouch(destinationString,-1);
-% else
-%     % Copy the file
-%     [Success,Message,MessageID] = copyfile(sourceString, destinationString, 'f');
-%     if 1~=Success
-%         error('Encountered copy error. Message is: %s with MessageID: %.0d',Message, MessageID)
-%     end
-% end
-%
-%
-% end % Ends fcn_INTERNAL_processChange

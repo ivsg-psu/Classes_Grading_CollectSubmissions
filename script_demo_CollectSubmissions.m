@@ -49,7 +49,39 @@
 %   %   % the current computer
 %
 % (new release)
-
+%
+% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
+% - In main script
+%   % * Simplified the call sequence to match, exactly, the usage expected
+%   %   % in practice
+% - Wrote fcn_CollectSubmissions_confirmGrades
+%   % * Used confirmSubmissions as starter
+%   % * This is a function that emails students to let them know grades
+%   % * How it works:
+%   %   % * Loops through change list between cloud and local mirror, 
+%   %   % * Finds if any match an assignment string, 
+%   %   % * Checks if the user preferences indicate that grades are
+%   %   %   % desired.
+%   %   % * Sends summary emails to the associated emails 
+% - In fcn_CollectSubmissions_confirmSubmissions
+%   % * Updated to use correct preferences field
+%   % * Updated to send verifications on modification AND addition
+%   % * Fixed bug where PSU email used, not preferred email. Now using
+%   %   % preferred email.
+% - In fcn_CollectSubmissions_updateLog
+%   % * Added plotting of results
+%   % * Added automatic header if new log is being made
+% - Wrote fcn_CollectSubmissions_gradeAssignment
+%   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
+%   % * Grades assignments and enters results into the student roster
+%
+% (new release)
+%
+% 2026_01_24 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Changed plot style to see locations of data collection
+%
+% (new release)
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
@@ -169,218 +201,172 @@ setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
 
 disp('Welcome to the demo code for the CollectSubmissions library!')
 
-%% Create test folders
-fprintf(1,'Loading the class roster.\n');
-CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
-emailForAddedTestStudents = 'snb10@psu.edu';
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
+%% Create test folders?
+% Done once
+if 1==1
+
+	%%%%%%%%%%%%%%%%%%%%%%%%%%
+	fprintf(1,'Loading the class roster.\n');
+	CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
+	emailForAddedTestStudents = 'snb10@psu.edu';
+	rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Create the mirror folder
-pathToMirrorFolder = fullfile(pwd,'Data','CloudMirror');
 
-if 1==0
-    if exist(pathToMirrorFolder,'dir')
-        % Remove the directory
-        rmdir(pathToMirrorFolder, 's');
-    end
-    assert(~exist(pathToMirrorFolder,'dir'));
-end
+	%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Create the mirror folder
+	fprintf(1,'Preparing the CloudMirror folders.\n');
+	pathToMirrorFolder = fullfile(pwd,'Data','CloudMirror');
 
-if ~exist(pathToMirrorFolder,'dir')
-    % Create the student directories
-	fprintf(1,'Creating student template folders in the mirror folder.\n');
-    fcn_LoadRoster_createSubmissionFolders(pathToMirrorFolder, rosterTable, (1))
-end
-assert(exist(pathToMirrorFolder,'dir'));
+	if 1==1
+		if exist(pathToMirrorFolder,'dir')
+			% Remove the directory
+			rmdir(pathToMirrorFolder, 's');
+		end
+		assert(~exist(pathToMirrorFolder,'dir'));
+	end
+
+	if ~exist(pathToMirrorFolder,'dir')
+		% Create the student directories
+		fprintf(1,'Creating student template folders in the data folder.\n');
+		fcn_LoadRoster_createSubmissionFolders(pathToMirrorFolder, rosterTable, (1))
+	end
+	assert(exist(pathToMirrorFolder,'dir'));
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Create the archive folder
-pathToArchiveFolder = fullfile(pwd,'Data','Archive');
+	%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Create the archive folder
+	fprintf(1,'Preparing the Archive folders.\n');
+	pathToArchiveFolder = fullfile(pwd,'Data','Archive');
 
-if 1==0
-    if exist(pathToArchiveFolder,'dir')
-        % Remove the directory
-        rmdir(pathToArchiveFolder, 's');
-    end
-    assert(~exist(pathToArchiveFolder,'dir'));
-end
+	if 1==1
+		if exist(pathToArchiveFolder,'dir')
+			% Remove the directory
+			rmdir(pathToArchiveFolder, 's');
+		end
+		assert(~exist(pathToArchiveFolder,'dir'));
+	end
 
-if ~exist(pathToArchiveFolder,'dir')
-    % Create the student directories
-	fprintf(1,'Creating archive folders in the mirror folder.\n');
-    fcn_LoadRoster_createSubmissionFolders(pathToArchiveFolder, rosterTable, (1))
-end
-assert(exist(pathToArchiveFolder,'dir'));
+	if ~exist(pathToArchiveFolder,'dir')
+		% Create the student directories
+		fprintf(1,'Creating archive folders in the data folder.\n');
+		fcn_LoadRoster_createSubmissionFolders(pathToArchiveFolder, rosterTable, (1))
+	end
+	assert(exist(pathToArchiveFolder,'dir'));
 
-%% fcn_CollectSubmissions_downloadFolders
+end % Ends done-once items
+
+%% Set variables
+% Make sure to run rclone config and use the OneDrivePSU as the name to
+% point to the PSU OneDrive account
+%
+% Command to check folder:
+% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
+
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
+cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
+localFolder = fullfile(pwd,'Data','CloudMirror');
+archiveFolder = fullfile(pwd,'Data','Archive');
+subFolderArchive = [];
+flagArchiveEqualFiles = [];
+assignmentFileString = 'SUBMISSION_Week01_HW01_';
+gradingFunction = @fcn_INTERNAL_gradeAssignment;
+assignmentString = 'Week01_HW01';
+logFile     = fullfile(pwd,'Data','logFile.csv');
+logSubFolder = '';
 figNum = 10001;
-titleString = sprintf('fcn_CollectSubmissions_downloadFolders');
-fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
-% figure(figNum); clf;
 
-% Make sure to run rclone config and use the OneDrivePSU as the name to
-% point to the PSU OneDrive account
-%
-% Command to check folder:
-% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
+%% Loop through time, gathering, grading, and emailing submissions
 
-rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
-cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','CloudMirror');
-syncTime = datetime('now');
+if exist('blockingFile.txt','file')
+	delete('blockingFile.txt');
+end
 
-% Call the function
-[fileContent, flagWasSuccessful, errorMsg, timeString, processDuration] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (figNum));
+while 1==1
+	clc;
+	fprintf(1, '\nSTARTING TURN: %.0f\n', ith_turn);
+	if exist('blockingFile.txt','file')
+		fprintf(1, 'Process is being blocked ... waiting.\n');
+	else
+		% Create a blocking file
+		fcn_DebugTools_fileTouch('blockingFile.txt');
 
-% sgtitle(titleString, 'Interpreter','none');
+		%%%% fcn_CollectSubmissions_downloadFolders
+		fprintf(1,'Downloading the class submissions from the cloud.\n');
+		% figure(figNum); clf;
 
-% Check variable types
-assert(isstring(fileContent) || ischar(fileContent));
-assert(islogical(flagWasSuccessful));
-assert(isstring(errorMsg) || ischar(errorMsg));
-assert(isstring(timeString) || ischar(timeString));
-assert(isnumeric(processDuration));
+		startTime = datetime('now');
 
-% Check variable sizes
-assert(size(fileContent,1)>=0);
-assert(size(fileContent,2)>=0);
-assert(size(flagWasSuccessful,1)==1);
-assert(size(flagWasSuccessful,2)==1);
-assert(size(errorMsg,1)>=0);
-assert(size(errorMsg,2)>=0);
-assert(size(timeString,1)==1);
-assert(size(timeString,2)==15);
-assert(size(processDuration,1)==1);
-assert(size(processDuration,2)==1);
+		% Call the function
+		[fileContent, flagWasSuccessful, errorMsg, timeString, ~] = ...
+			fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, startTime, (figNum));
 
-% Check variable values
-% Are the laps starting at expected points?
-assert(processDuration>0);
-% 
-% % Make sure plot opened up
-% assert(isequal(get(gcf,'Number'),figNum));
+		%%%% fcn_CollectSubmissions_archiveChanges
+		fprintf(1,'Archiving submissions.\n');
 
-%% fcn_CollectSubmissions_archiveChanges
-figNum = 10002;
-titleString = sprintf('fcn_CollectSubmissions_archiveChanges');
-fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
-% figure(figNum); clf;
+		%%%%%%%%%%
+		% Call the function
+		totalsCollected = ...
+			fcn_CollectSubmissions_archiveChanges(...
+			fileContent, localFolder, archiveFolder, timeString, ...
+			(subFolderArchive), (flagArchiveEqualFiles), (figNum));
 
-% Make sure to run rclone config and use the OneDrivePSU as the name to
-% point to the PSU OneDrive account
-%
-% Command to check folder:
-% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
-
-rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
-cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','CloudMirror');
-archiveFolder = fullfile(pwd,'Data','Archive');
-syncTime = datetime('now');
-
-[fileContent, ~, ~, timeString, ~] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
-
-subFolder = [];
-flagArchiveEqualFiles = [];
+		%%%% fcn_CollectSubmissions_gatherSubmissionsIntoTable
+		fprintf(1,'Gathering submissions.\n');
 
 
-%%%%%%%%%%
-% Call the function
-totalsCollected = ...
-    fcn_CollectSubmissions_archiveChanges(...
-    fileContent, localFolder, archiveFolder, timeString, ...
-    (subFolder), (flagArchiveEqualFiles), (figNum));
+		%%%%%%
+		% Gather all results into a table
+		ungradedSubmissionTable = ...
+			fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentFileString, localFolder, (figNum));
 
-% sgtitle(titleString, 'Interpreter','none');
+		%%%% fcn_CollectSubmissions_gradeAssignment
+		fprintf(1,'Grading submissions.\n');
 
-% Check variable types
-assert(isnumeric(totalsCollected.totalSame));
-assert(isnumeric(totalsCollected.totalAdded));
-assert(isnumeric(totalsCollected.totalDeleted));
-assert(isnumeric(totalsCollected.totalModified));
-assert(isnumeric(totalsCollected.totalErrored));
-
-% Check variable sizes
-assert(isequal(size(totalsCollected.totalSame),[1 1]));
-assert(isequal(size(totalsCollected.totalAdded),[1 1]));
-assert(isequal(size(totalsCollected.totalDeleted),[1 1]));
-assert(isequal(size(totalsCollected.totalModified),[1 1]));
-assert(isequal(size(totalsCollected.totalErrored),[1 1]));
-
-% % Check variable values
-% % Are the laps starting at expected points?
-% assert(isequal(2,min(cell_array_of_lap_indices{1})));
-% assert(isequal(102,min(cell_array_of_lap_indices{2})));
-% assert(isequal(215,min(cell_array_of_lap_indices{3})));
-
-% % Make sure plot opened up
-% assert(isequal(get(gcf,'Number'),figNum));
-
-%% fcn_CollectSubmissions_confirmSubmissions
-figNum = 10003;
-titleString = sprintf(fcn_CollectSubmissions_confirmSubmissions');
-fprintf(1,'Figure %.0f: %s\n',figNum, titleString);
-% figure(figNum); clf;
+		%  Call the function
+		gradedRosterTable = ...
+			fcn_CollectSubmissions_gradeAssignment(assignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, (figNum));
 
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% Load the folders
-% Make sure to run rclone config and use the OneDrivePSU as the name to
-% point to the PSU OneDrive account
-%
-% Command to check folder:
-% rclone lsd --max-depth 1 "OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions"
+		%%%% fcn_CollectSubmissions_confirmSubmissions
+		fprintf(1,'Confirming submissions.\n');
 
-rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
-cloudFolder = 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions';
-localFolder = fullfile(pwd,'Data','CloudMirror');
-archiveFolder = fullfile(pwd,'Data','Archive');
-syncTime = datetime('now');
-
-[fileContent, ~, ~, timeString, ~] = ...
-    fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, syncTime, (-1));
-
-subFolder = [];
-flagArchiveEqualFiles = [];
+		%%%%%%%%%%
+		% Call the function
+		confirmedGradedRosterTable = ...
+			fcn_CollectSubmissions_confirmSubmissions(...
+			fileContent, gradedRosterTable, (assignmentString), (figNum));
 
 
+		%%%% fcn_CollectSubmissions_confirmGrades
+		fprintf(1,'Confirming grades.\n');
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% Load the roster
-CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
-emailForAddedTestStudents = 'snb10@psu.edu';
-rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
+		%%%%%%%%%%
+		% Call the function
+		finalGradedRosterTable = ...
+			fcn_CollectSubmissions_confirmGrades(...
+			fileContent, confirmedGradedRosterTable, (assignmentString), (figNum));
+
+		%%%% fcn_CollectSubmissions_updateLog
+		fprintf(1,'Updating the log file.\n');
+
+		endTime = datetime('now');
+		processDuration = seconds(endTime - startTime);
+
+		% Call the function
+		fcn_CollectSubmissions_updateLog(logFile, endTime, processDuration, flagWasSuccessful, logSubFolder, totalsCollected, (figNum))
 
 
-assignmentString = '';
+		rosterTable = finalGradedRosterTable;
 
-%%%%%%%%%%
-% Call the function
-updatedRosterTable = ...
-    fcn_CollectSubmissions_confirmSubmissions(...
-    fileContent, rosterTable, (assignmentString), (figNum));
+		% Delete the blocking file
+		delete('blockingFile.txt');
 
-% sgtitle(titleString, 'Interpreter','none');
 
-% Check variable types
-assert(istable(updatedRosterTable));
-
-% Check variable sizes
-assert(height(updatedRosterTable) == height(rosterTable));
-
-% % Check variable values
-% % Are the laps starting at expected points?
-% assert(isequal(2,min(cell_array_of_lap_indices{1})));
-% assert(isequal(102,min(cell_array_of_lap_indices{2})));
-% assert(isequal(215,min(cell_array_of_lap_indices{3})));
-
-% % Make sure plot opened up
-% assert(isequal(get(gcf,'Number'),figNum));
+	end % Ends check for blocking file
+	
+	pause(10);
+end
 
 %% Functions follow
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -428,3 +414,14 @@ end % Ends fcn_INTERNAL_clearUtilitiesFromPathAndFolders
 % % Use the last data
 % CSVpath = fullfile(cd,'Data','roster_2026_01_06.csv');
 % end % Ends fcn_INTERNAL_loadExampleData
+
+%% fcn_INTERNAL_gradeAssignment
+function [percent, comments] = fcn_INTERNAL_gradeAssignment(answers)
+numAnswers = length(answers);
+percent = 0;
+for ith_answer = 1:numAnswers
+	percent = percent + 1/numAnswers;
+	comments{ith_answer} = sprintf('Prob %.0f: correct',ith_answer);
+end
+end % ends fcn_INTERNAL_gradeAssignment
+

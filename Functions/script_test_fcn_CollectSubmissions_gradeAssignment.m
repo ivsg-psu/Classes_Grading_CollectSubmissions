@@ -76,17 +76,21 @@ assignmentString = 'SUBMISSION_Week01_HW01_';
 ungradedSubmissionTable = ...
     fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, (figNum));
 
-% Call the function
-ungradedSubmissionTable = ...
-    fcn_CollectSubmissions_gradeAssignment(fileContent, assignmentString, localFolder, (figNum));
+%%%%%
+%  Call the function
+gradingFunction = @fcn_INTERNAL_gradeAssignment;
+thisAssignmentString = 'Week01_HW01';
+
+gradedRosterTable = ...
+    fcn_CollectSubmissions_gradeAssignment(thisAssignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, (figNum));
 
 % sgtitle(titleString, 'Interpreter','none');
 
 % Check variable types
-assert(istable(ungradedSubmissionTable));
+assert(istable(gradedRosterTable));
 
 % Check variable sizes
-assert(height(ungradedSubmissionTable) <= height(rosterTable));
+assert(height(gradedRosterTable) == height(rosterTable));
 
 % % Check variable values
 % % Are the laps starting at expected points?
@@ -354,6 +358,16 @@ end
 %
 % See: https://patorjk.com/software/taag/#p=display&f=Big&t=Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
+
+%% fcn_INTERNAL_gradeAssignment
+function [percent, comments] = fcn_INTERNAL_gradeAssignment(answers)
+numAnswers = length(answers);
+percent = 0;
+for ith_answer = 1:numAnswers
+	percent = percent + 1/numAnswers;
+	comments{ith_answer} = sprintf('Prob %.0f: correct',ith_answer);
+end
+end % ends fcn_INTERNAL_gradeAssignment
 
 
 % %% fcn_INTERNAL_loadExampleData
