@@ -82,6 +82,12 @@
 %   % * Changed plot style to see locations of data collection
 %
 % (new release)
+%
+% 2026_01_24 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_setRcloneFolder
+%   % * Updated folder for E5-ME-SEBR02
+%
+% (new release)
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
