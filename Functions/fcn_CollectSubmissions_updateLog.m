@@ -22,7 +22,8 @@ function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, fl
 %      flagWasSuccessful: returns 1 if function completed without errors
 %
 %      subFolder: a string designating which selected folders should ONLY
-%      be updated (default is '', which includes all updates).
+%      be updated (default is '', which includes all updates). This is not
+%      used in this function. It is simply logged.
 %
 %      totalsCollected: a structure containing totals of results, with following subfields
 %      
@@ -74,6 +75,11 @@ function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, fl
 % 2026_01_24 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_updateLog
 %   % * Changed plot style to see locations of data collection
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Removed unused function
+%   % * Removed debug supression comment that is now unneeded
 
 % TO-DO:
 %
@@ -179,7 +185,7 @@ flag_do_plots = 0; % Default is to NOT show plots
 if (0==flag_max_speed) && (MAX_NARGIN == nargin)
     temp = varargin{end};
     if ~isempty(temp) % Did the user NOT give an empty figure number?
-        figNum = temp; %#ok<NASGU>
+        figNum = temp; 
         flag_do_plots = 1;
     end
 end
@@ -309,50 +315,3 @@ end % Ends main function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%§
 
 
-%% fcn_INTERNAL_processChange
-function fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString)
-
-% Break the change into parts, either folders or files
-folderBreaks = find(changeToProcess == '/', 1);
-if ~isempty(folderBreaks)
-    output_cell_array = split(changeToProcess, '/');
-else
-    output_cell_array{1} = changeToProcess;
-end
-    
-% Build the path to the source
-sourceString = localFolder;
-for ith_cell = 1:length(output_cell_array)
-    sourceString = fullfile(sourceString,output_cell_array{ith_cell});
-end
-[~,name,ext] = fileparts(sourceString);
-
-newName = cat(2,name,suffixString,ext);
-
-% Build the path to the destination, building the path up to the new name
-% but not including the name
-destinationPathString = archiveFolder;
-for ith_cell = 1:length(output_cell_array)-1
-    destinationPathString = fullfile(destinationPathString,output_cell_array{ith_cell});
-end
-
-% Make the directory, if it does not exist
-if ~exist(destinationPathString,'dir')
-    fcn_DebugTools_makeDirectory(destinationPathString,-1);
-end
-
-% Copy the file or touch the file?
-destinationString = fullfile(destinationPathString,newName);
-if strcmp(suffixString(end-3:end),'_rem') || strcmp(suffixString(end-3:end),'_err')
-    % File was deleted or an error occurred. Touch the file name to log.
-    fcn_DebugTools_fileTouch(destinationString,-1);
-else
-    % Copy the file
-    [Success,Message,MessageID] = copyfile(sourceString, destinationString, 'f');
-    if 1~=Success
-        error('Encountered copy error. Message is: %s with MessageID: %.0d',Message, MessageID)
-    end
-end
-
-
-end % Ends fcn_INTERNAL_processChange

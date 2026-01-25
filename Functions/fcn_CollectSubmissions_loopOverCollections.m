@@ -1,54 +1,56 @@
-function updatedRosterTable = ...
-	fcn_CollectSubmissions_confirmSubmissions(fileContent, rosterTable, varargin)
+function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
+	rosterTable, ...
+	cloudFolder, localFolder, archiveFolder, ...
+	assignmentString, gradingFunction, logFile, varargin)
 
-%% fcn_CollectSubmissions_confirmSubmissions
-%     fcn_CollectSubmissions_confirmSubmissions processes changes between
-%     cloud and local mirror, finds if any match an assignment string, and
-%     sends confirmation emails to the associated emails that the file(s)
-%     were received if the user preferences indicate that confirmations are
-%     desired.
+%% fcn_CollectSubmissions_loopOverCollections
+%     fcn_CollectSubmissions_loopOverCollections loops over the
+%     CollectSubmissions functions to collect, archive, grade, and email
+%     results to students.
 %
 % FORMAT:
 %
-%      totalsCollected = ...
-%      fcn_CollectSubmissions_confirmSubmissions(...
-%      fileContent, rosterTable, (assignmentString), (figNum));
+%      updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
+%      rosterTable, ...
+%      cloudFolder, localFolder, archiveFolder, ...
+%      assignmentString, gradingFunction, logFile, (exitCounter), (figNum));
 %
 % INPUTS:
 %
-%      fileContent: an array of strings, one for each file transfer, that
-%      lists the type of change for each file. This result is automatically
-%      populated from rclone, and the designators have the following
-%      meaning (see: https://rclone.org/commands/rclone_sync/)
+%      rosterTable: a table of the class roster
 %
-%           = path means path was found in source and destination and was
-%           identical (no change)
+%      cloudFolder: a string containing the path to the folder on the
+%      cloud resource where data should be copied from. This is typically
+%      linked to a path set in the 'rclone config' process. An example
+%      path: 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions'
 %
-%           - path means path was missing on the source, so only in the
-%           destination (deletion in destination)
+%      localFolder: a string containing the path to the folder on the
+%      local computer where the data should be copied to. After the
+%      successful rclone operation, this is a mirror copy of the
+%      cloudFolder.
 %
-%           + path means path was missing on the destination, so only in
-%           the source (addition in destination)
-%
-%           * path means path was present in source and destination but
-%           different. (modification in destination)
-%
-%           ! path means there was an error reading or hashing the source
-%           or dest. (error in transfer)
-%
-%      rosterTable: a table representing the class roster
-%
-%      (OPTIONAL INPUTS)
+%      archiveFolder: a string containing the path to the folder on the
+%      local computer where the archives should be copied to
 %
 %      assignmentString: a string denoting which assignment to check. Any
 %      assignment containing this will trigger a submission email
 %      verification. Default is the word 'SUBMISSION' which will trigger
 %      all submissions.
 %
+%      gradingFunction: a function handle to a MATLAB function that is
+%      called to assess answers and assign grades
+%
+%      logFile: a string containing the path to the file used for logging
+%
+%      (OPTIONAL INPUTS)
+%
+%      exitCounter: an integer specifying how many iterations to run the
+%      while loop. The while loop will continue until iterations is larger
+%      than exitCounter. Default is 'inf'.
+%
 %      figNum: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed. Will also email students, rather than use
-%      the debugging email (snb10+debug@psu.edu)
+%      up code to maximize speed.
 %
 % OUTPUTS:
 %
@@ -61,42 +63,45 @@ function updatedRosterTable = ...
 %
 % EXAMPLES:
 %
-%     See the script: script_test_fcn_CollectSubmissions_confirmSubmissions
+%     See the script: script_test_fcn_CollectSubmissions_loopOverCollections
 %     for a full test suite.
 %
-% This function was written on 2026_01_16 by S. Brennan
+% This function was written on 2026_01_25 by S. Brennan
 % Questions or comments? sbrennan@psu.edu
 
 % REVISION HISTORY:
 %
-% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
-% - Wrote fcn_CollectSubmissions_confirmSubmissions
-%   % * Used archiveChanges as starter
-%   % * This is a function that emails students to confirm submissions
-%   % * Lets users know that the file(s) were received 
-%   % * How it works:
-%   %   % * Loops through change list between cloud and local mirror, 
-%   %   % * Finds if any match an assignment string, 
-%   %   % * Checks if the user preferences indicate that confirmations are
-%   %   %   % desired.
-%   %   % * Sends confirmation emails to the associated emails 
-%
-% 2026_01_23 by Sean Brennan, sbrennan@psu.edu
-% - In fcn_CollectSubmissions_confirmSubmissions
-%   % * Updated to use correct preferences field
-%   % * Updated to send verifications on modification AND addition
-%   % * Fixed bug where PSU email used, not preferred email. Now using
-%   %   % preferred email.
-%
 % 2026_01_25 by Sean Brennan, sbrennan@psu.edu
-% - In fcn_CollectSubmissions_confirmSubmissions
-%   % * Added a debug mode where students are NEVER emailed unless -1 is
-%   %   % passed as the figure number.
-%   % * Emails snb10+debug@psu.edu as debug email
+% - Wrote fcn_CollectSubmissions_loopOverCollections
+%   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
+%   % * This is a function that loops over the collection process
+%   % * How it works:
+%   %   % * Enters a while loop for a user-defined number of cycles, and in
+%   %   %   % each while loop, does the following:
+%   %   % * Creates a blocking file so that other instances cannot run
+%   %   % * Downloads submissions 
+%   %   %   % fcn_CollectSubmissions_downloadFolders
+%   %   % * Archives changes 
+%   %   %   % fcn_CollectSubmissions_archiveChanges
+%   %   % * Gathers specific assignment into a table
+%   %   %   % fcn_CollectSubmissions_gatherSubmissionsIntoTable
+%   %   % * Grades the assignment using user-defined function
+%   %   %   % fcn_CollectSubmissions_gradeAssignment
+%   %   % * Confirms submissions by emailing students
+%   %   %   % fcn_CollectSubmissions_confirmSubmissions
+%   %   % * Confirms grades by emailing students
+%   %   %   % fcn_CollectSubmissions_confirmGrades
+%   %   % * Updates the log of entries (which makes a plot)
+%   %   %   % fcn_CollectSubmissions_updateLog
+%   %   % * Saves a mat file, with time stamp, of rosterTable
+%   %   % * Deletes the blocking file when done
+%   %   % * Pauses 1 second before next loop iteration
+
+
 
 % TO-DO:
 %
-% 2026_01_16 by Sean Brennan, sbrennan@psu.edu
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
 % - (fill in items here)
 
 
@@ -106,7 +111,7 @@ function updatedRosterTable = ...
 % Check if flag_max_speed set. This occurs if the figNum variable input
 % argument (varargin) is given a number of -1, which is not a valid figure
 % number.
-MAX_NARGIN = 4; % The largest Number of argument inputs to the function
+MAX_NARGIN = 9; % The largest Number of argument inputs to the function
 flag_max_speed = 0; % The default. This runs code with all error checking
 if (nargin==MAX_NARGIN && isequal(varargin{end},-1))
 	flag_do_debug = 0; % Flag to plot the results for debugging
@@ -149,21 +154,24 @@ end
 if 0==flag_max_speed
 	if flag_check_inputs
 		% Are there the right number of inputs?
-		narginchk(2,MAX_NARGIN);
+		narginchk(MAX_NARGIN-2,MAX_NARGIN);
 
-		% Check the fileContent to be sure it is a string
-		fcn_DebugTools_checkInputsToFunctions(fileContent, '_of_strings');
+		% Check the cloudFolder to be sure it is a text style
+		fcn_DebugTools_checkInputsToFunctions(cloudFolder, '_of_char_strings');
 
-		% Check the rosterTable to be sure it is a text style and a folder
-		% fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
-		% fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
+		% Check the localFolder to be sure it is a text style and a folder
+		fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
+		fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
 
-		% % Check the archiveFolder to be sure it is a text style and a folder
-		% fcn_DebugTools_checkInputsToFunctions(archiveFolder, '_of_char_strings');
-		% fcn_DebugTools_checkInputsToFunctions(archiveFolder, 'DoesDirectoryExist');
-		%
-		% % Check the timeString to be sure it is a text style
-		% fcn_DebugTools_checkInputsToFunctions(timeString, '_of_char_strings');
+		% Check the archiveFolder to be sure it is a text style and a folder
+		fcn_DebugTools_checkInputsToFunctions(archiveFolder, '_of_char_strings');
+		fcn_DebugTools_checkInputsToFunctions(archiveFolder, 'DoesDirectoryExist');
+
+		% Check the assignmentString to be sure it is a text style
+		fcn_DebugTools_checkInputsToFunctions(assignmentString, '_of_char_strings');
+
+        % Check the logFile to be sure it is a string or char
+        fcn_DebugTools_checkInputsToFunctions(logFile, '_of_char_strings');
 
 	end
 end
@@ -171,29 +179,15 @@ end
 
 % The following area checks for variable argument inputs (varargin)
 
-% Does the user want to specify the assignmentString input?
+% Does the user want to specify the exitCounter input?
 % Set defaults first:
-assignmentString = 'SUBMISSION';
+exitCounter = inf;
 if 3 <= nargin
 	temp = varargin{1};
 	if ~isempty(temp)
-		assignmentString = temp;
-		if flag_check_inputs
-			% Check the assignmentString to be sure it is a text style
-			fcn_DebugTools_checkInputsToFunctions(assignmentString, '_of_char_strings');
-		end
+		exitCounter = temp;
 	end
 end
-
-% % Does the user want to specify flagArchiveEqualFiles input?
-% flagArchiveEqualFiles = 0; % Default case
-% if 6 <= nargin
-%     temp = varargin{2};
-%     if ~isempty(temp)
-%         % Set the flagArchiveEqualFiles values
-%         flagArchiveEqualFiles = temp;
-%     end
-% end
 
 % Does user want to show the plots?
 flag_do_plots = 0; % Default is to NOT show plots
@@ -217,109 +211,119 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-updatedRosterTable = rosterTable;
+rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 
-% Initialize counts
-totalEmailed = 0;
-
-% Pull the CanvasID numbers
-CanvasIDNumbers = updatedRosterTable.CanvasIDNumber;
-
-% Check if there are user preferences in the table. If so, use these. If
-% not, set all preferences to "true"
-if ~ismember('PreferencesConfirmSubmission',updatedRosterTable.Properties.VariableNames)
-	notificationPreferences = true(height(updatedRosterTable),1);
-else
-	notificationPreferences = updatedRosterTable.('PreferencesConfirmSubmission');
+if exist('blockingFile.txt','file')
+	delete('blockingFile.txt');
 end
 
-% Check to see if email flag column already exists. If not, create it
-emailVerificationColumnName = cat(2,assignmentString,'_confSent');
-if ~ismember(emailVerificationColumnName,updatedRosterTable.Properties.VariableNames)
-	% Add a single logical flag column (all false)
-	updatedRosterTable.(emailVerificationColumnName) = false(height(updatedRosterTable),1);
-end
+thisTurn = 0;
+while thisTurn<exitCounter % One shot
 
-% Loop through all the changes, checking to see which ones contain an
-% addition (+) that has the assignmentString within the addition. Extract
-% the student info from the change, and then email the student to confirm.
-for ith_change = 1:length(fileContent)
-	thisChange = fileContent(ith_change);
-	thisChangeChar = char(thisChange);
-	if ~isempty(thisChangeChar)
-		if length(thisChangeChar)>length(assignmentString) && contains(thisChangeChar,assignmentString)
-			changeToProcess = thisChangeChar(3:end);
-			if any(strcmp(thisChangeChar(1),{'+';'*'})) % Addition or modification
+	thisTurn = thisTurn+1;
+	fprintf(1, '\nSTARTING TURN: %.0f of %.0f\n', thisTurn, exitCounter);
+	if exist('blockingFile.txt','file')
+		fprintf(1, 'Process is being blocked ... waiting.\n');
+	else
+		% Create a blocking file
+		fcn_DebugTools_fileTouch('blockingFile.txt');
 
-				% Get student details
-				studentNumberString = extractBefore(changeToProcess,'/');
-				studentNumber = str2double(studentNumberString);
-				studentRowNumber = find(CanvasIDNumbers==studentNumber);
-				studentEmail = updatedRosterTable.('StudentGivenContactEmail'){studentRowNumber};
-				studentName = updatedRosterTable.('FullName'){studentRowNumber};
+		%%%% fcn_CollectSubmissions_downloadFolders
+		fprintf(1,'Downloading the class submissions from the cloud.\n');
+		% figure(figNum); clf;
 
-				% Check for weird cases
-				if isempty(studentRowNumber)
-					warning('backtrace','on');
-					warning('A student number was encountered that is not in the roster: %.0d. Unable to email this student.',studentNumber);
-				end
-				if length(studentRowNumber)>1
-					warning('backtrace','on');
-					warning('Multiple students were found in the roster with the same student number: %.0d. Unclear which student to email.',studentNumber);
-				end
+		startTime = datetime('now');
 
+		% Call the function
+		[fileContent, flagWasSuccessful, ~, timeString, ~] = ...
+			fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, startTime, (figNum));
 
+		%%%% fcn_CollectSubmissions_archiveChanges
+		fprintf(1,'Archiving submissions.\n');
+		subFolderArchive = [];
+		flagArchiveEqualFiles = [];
 
-				% For debugging
-				if figNum~=-1
-					studentEmail = 'snb10+debug@psu.edu';
-				end
+		%%%%%%%%%%
+		% Call the function
+		totalsCollected = ...
+			fcn_CollectSubmissions_archiveChanges(...
+			fileContent, localFolder, archiveFolder, timeString, ...
+			(subFolderArchive), (flagArchiveEqualFiles), (figNum));
 
-				entryAfterNumberString = extractAfter(changeToProcess, '/');
-
-				% Send email?
-				notificationCell = notificationPreferences(studentRowNumber);
-				studentWantsNotification = notificationCell{1};
-				if studentWantsNotification
-
-					recipient = studentEmail;
-					subject = sprintf('ME452: automated confirmation of assignment submission %s',assignmentString);
-					body = [...
-						sprintf('This email is being sent automatically by the ME452 assignment manager to confirm that the following submission was received:') 10 10 ...
-						sprintf('Assignment name: %s.',entryAfterNumberString) 10 ...
-						sprintf('Student number: %.0f.',studentNumber) 10 ...
-						sprintf('Student name: %s.',studentName) 10 ...
-						sprintf('Student email: %s.',studentEmail) 10 ...
-						];
-
-					% Attachments:
-					% if 1==0
-					% 	st = dbstack; %#ok<*UNRCH>
-					% 	scriptPath = which(st.file);
-					% 	scriptName = st.file;
-					% 	functionName = extractAfter(scriptName,'script_test_');
-					% 	functionPath = which(functionName);
-					% else
-					% 	scriptPath = which('script_test_fcn_LoadRoster_sendEmail');
-					% 	functionPath = which('fcn_LoadRoster_sendEmail');
-					% end
-					% attachments = {scriptPath, functionPath};
-					% fcn_LoadRoster_sendEmail( recipient, subject, body, attachments, (figNum))
-
-					% Send the email
-					fcn_LoadRoster_sendEmail( recipient, subject, body,{})
-					updatedRosterTable.(emailVerificationColumnName)(studentRowNumber) = true;
-
-					totalEmailed = totalEmailed+1;
+		%%%% fcn_CollectSubmissions_gatherSubmissionsIntoTable
+		fprintf(1,'Gathering submissions.\n');
 
 
-				end
+		%%%%%%
+		% Gather all results into a table
+		assignmentFileString = cat(2,'SUBMISSION_',assignmentString,'_');
+		ungradedSubmissionTable = ...
+			fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentFileString, localFolder, (figNum));
 
-			end % if statement for addition only
-		end % Ends if check to make sure thisChangeChar is 3 or more chars
-	end % Ends check for empty character
-end
+		%%%% fcn_CollectSubmissions_gradeAssignment
+		fprintf(1,'Grading submissions.\n');
 
+		%  Call the function
+		gradedRosterTable = ...
+			fcn_CollectSubmissions_gradeAssignment(assignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, (figNum));
+
+
+		%%%% fcn_CollectSubmissions_confirmSubmissions
+		fprintf(1,'Confirming submissions.\n');
+
+		%%%%%%%%%%
+		% Call the function
+		confirmedGradedRosterTable = ...
+			fcn_CollectSubmissions_confirmSubmissions(...
+			fileContent, gradedRosterTable, (assignmentString), (figNum));
+
+
+		%%%% fcn_CollectSubmissions_confirmGrades
+		fprintf(1,'Confirming grades.\n');
+
+		%%%%%%%%%%
+		% Call the function
+		finalGradedRosterTable = ...
+			fcn_CollectSubmissions_confirmGrades(...
+			fileContent, confirmedGradedRosterTable, (assignmentString), (figNum));
+
+		%%%% fcn_CollectSubmissions_updateLog
+		fprintf(1,'Updating the log file.\n');
+
+		endTime = datetime('now');
+		processDuration = seconds(endTime - startTime);
+
+		% Call the function
+		fcn_CollectSubmissions_updateLog(logFile, endTime, processDuration, flagWasSuccessful, assignmentString, totalsCollected, (figNum))
+
+		rosterTable = finalGradedRosterTable;
+		updatedRosterTable = rosterTable;
+
+		% Save the most recent roster
+		timeString = fcn_DebugTools_time2String(datetime('now'),-1);
+		rosterDataFileName = sprintf('roster_%s.mat',timeString(1:end-4));
+
+		rostersFolder = fullfile(pwd,'Rosters');
+		if ~exist(rostersFolder,'dir')
+			warning('backtrace','on');
+			warning('Roster archive folder not found: \n\t%s\n.',rostersFolder);
+			error('Unable to continue. Cannot backup rosters.');
+		end
+
+		rosterDataFilePath = fullfile(rostersFolder,rosterDataFileName);
+		if ~exist(rosterDataFilePath,'file')
+			save(rosterDataFilePath,'rosterTable');
+			fprintf(1,'Saved new roster data file: %s\n',rosterDataFileName)
+		end
+		
+		% Delete the blocking file
+		delete('blockingFile.txt');
+
+
+	end % Ends check for blocking file
+	
+	pause(1); % Pause to let user see plot
+end % Ends while loop
 
 %% Plot the results (for debugging)?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -333,8 +337,6 @@ end
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-	fprintf(1,'totalEmailed:     %.0f\n', totalEmailed);
-
 	%  disp(rosterTable);
 	% % plot the final XY result
 	% figure(figNum);

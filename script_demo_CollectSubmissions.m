@@ -88,6 +88,24 @@
 %   % * Updated folder for E5-ME-SEBR02
 %
 % (new release)
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Removed unused function
+%   % * Removed debug supression comment that is now unneeded
+% - In fcn_CollectSubmissions_confirmGrades
+%   % * Added a debug mode where students are NEVER emailed unless -1 is
+%   %   % passed as the figure number.
+%   % * Emails snb10+debug@psu.edu as debug email
+% - In fcn_CollectSubmissions_confirmSubmissions
+%   % * Added a debug mode where students are NEVER emailed unless -1 is
+%   %   % passed as the figure number.
+%   % * Emails snb10+debug@psu.edu as debug email
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * Added more detail to input arguments, for clarity
+%
+% (new release)
+
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu

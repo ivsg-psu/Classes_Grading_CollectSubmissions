@@ -17,10 +17,14 @@ function [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration]
 %      local computer where rclone is installed
 %
 %      cloudFolder: a string containing the path to the folder on the
-%      cloud resource where data should be copied from
+%      cloud resource where data should be copied from. This is typically
+%      linked to a path set in the 'rclone config' process. An example
+%      path: 'OneDrivePSU:/Classes/ME452 Vehicle Dynamics/00_Submissions'
 %
 %      localFolder: a string containing the path to the folder on the
-%      local computer where the data should be copied to
+%      local computer where the data should be copied to. After the
+%      successful rclone operation, this is a mirror copy of the
+%      cloudFolder.
 %
 %      syncTime: the time at which the synchronization started
 %      obtained via: datetime('now')
@@ -78,7 +82,11 @@ function [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration]
 % REVISION HISTORY:
 %
 % 2026_01_06 by Sean Brennan, sbrennan@psu.edu
-% - wrote the code originally, using breakDataIntoLaps as starter
+% - Wrote the code originally, using breakDataIntoLaps as starter
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * Added more detail to input arguments, for clarity
 
 % TO-DO:
 %

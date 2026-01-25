@@ -77,6 +77,12 @@ function updatedRosterTable = ...
 %   %   % * Checks if the user preferences indicate that grades are
 %   %   %   % desired.
 %   %   % * Sends summary emails to the associated emails 
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_confirmGrades
+%   % * Added a debug mode where students are NEVER emailed unless -1 is
+%   %   % passed as the figure number.
+%   % * Emails snb10+debug@psu.edu as debug email
 
 % TO-DO:
 %
@@ -266,10 +272,9 @@ for ith_change = 1:length(fileContent)
 				end
 
 
-
 				% For debugging
-				if 1==0
-					studentEmail = 'snb10+ME452@psu.edu';
+				if figNum~=-1
+					studentEmail = 'snb10+debug@psu.edu';
 				end
 
 				entryAfterNumberString = extractAfter(changeToProcess, '/');
