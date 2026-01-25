@@ -50,7 +50,9 @@ function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
 %
 %      figNum: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed.
+%      up code to maximize speed. If set to a negative number less than -1,
+%      figNum is set to the positive value of this AND safeMode is shut
+%      off, so that students are emailed.
 %
 % OUTPUTS:
 %
@@ -96,7 +98,10 @@ function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
 %   %   % * Saves a mat file, with time stamp, of rosterTable
 %   %   % * Deletes the blocking file when done
 %   %   % * Pauses 1 second before next loop iteration
-
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Addes safeMode for student emails
 
 
 % TO-DO:
@@ -210,6 +215,12 @@ end
 %  |_|  |_|\__,_|_|_| |_|
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if figNum<-1
+	safeMode = -1; % Set to -1 to email students
+	figNum = -1*figNum;
+else
+	safeMode = 1; % Set to -1 to email students
+end
 
 rcloneFolder = fcn_CollectSubmissions_setRcloneFolder;
 
@@ -275,7 +286,7 @@ while thisTurn<exitCounter % One shot
 		% Call the function
 		confirmedGradedRosterTable = ...
 			fcn_CollectSubmissions_confirmSubmissions(...
-			fileContent, gradedRosterTable, (assignmentString), (figNum));
+			fileContent, gradedRosterTable, (assignmentString), (safeMode));
 
 
 		%%%% fcn_CollectSubmissions_confirmGrades
@@ -285,7 +296,7 @@ while thisTurn<exitCounter % One shot
 		% Call the function
 		finalGradedRosterTable = ...
 			fcn_CollectSubmissions_confirmGrades(...
-			fileContent, confirmedGradedRosterTable, (assignmentString), (figNum));
+			fileContent, confirmedGradedRosterTable, (assignmentString), (safeMode));
 
 		%%%% fcn_CollectSubmissions_updateLog
 		fprintf(1,'Updating the log file.\n');

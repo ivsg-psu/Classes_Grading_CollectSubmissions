@@ -105,7 +105,13 @@
 %   % * Added more detail to input arguments, for clarity
 %
 % (new release)
-
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Addes safeMode for student emails
+%
+% (new release)
+%
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
