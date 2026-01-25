@@ -112,6 +112,19 @@
 %
 % (new release)
 %
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_confirmGrades
+%   % * Fixed bug where -1 was used to cause safeMode, causing errors with
+%   %   % fastMode. Fixed to use -10 instead.
+% - In fcn_CollectSubmissions_confirmSubmissions
+%   % * Fixed bug where -1 was used to cause safeMode, causing errors with
+%   %   % fastMode. Fixed to use -10 instead.
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Fixed bug where -1 was used to cause safeMode, causing errors with
+%   %   % fastMode. Fixed to use -10 instead.
+%
+% (new release)
+%
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu

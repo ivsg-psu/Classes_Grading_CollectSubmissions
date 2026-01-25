@@ -102,6 +102,11 @@ function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
 % 2026_01_25 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_loopOverCollections
 %   % * Addes safeMode for student emails
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Fixed bug where -1 was used to cause safeMode, causing errors with
+%   %   % fastMode. Fixed to use -10 instead.
 
 
 % TO-DO:
@@ -216,7 +221,7 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if figNum<-1
-	safeMode = -1; % Set to -1 to email students
+	safeMode = -10; % Set to -10 to email students
 	figNum = -1*figNum;
 else
 	safeMode = 1; % Set to -1 to email students

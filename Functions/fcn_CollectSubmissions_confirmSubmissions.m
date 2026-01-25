@@ -47,8 +47,8 @@ function updatedRosterTable = ...
 %
 %      figNum: a figure number to plot results. If set to -1, skips any
 %      input checking or debugging, no figures will be generated, and sets
-%      up code to maximize speed. Will also email students, rather than use
-%      the debugging email (snb10+debug@psu.edu)
+%      up code to maximize speed. If set equal to -10, will email students,
+%      rather than use the debugging email (snb10+debug@psu.edu)
 %
 % OUTPUTS:
 %
@@ -93,6 +93,11 @@ function updatedRosterTable = ...
 %   % * Added a debug mode where students are NEVER emailed unless -1 is
 %   %   % passed as the figure number.
 %   % * Emails snb10+debug@psu.edu as debug email
+%
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_confirmSubmissions
+%   % * Fixed bug where -1 was used to cause safeMode, causing errors with
+%   %   % fastMode. Fixed to use -10 instead.
 
 % TO-DO:
 %
@@ -197,6 +202,7 @@ end
 
 % Does user want to show the plots?
 flag_do_plots = 0; % Default is to NOT show plots
+figNum = [];
 if (0==flag_max_speed) && (MAX_NARGIN == nargin)
 	temp = varargin{end};
 	if ~isempty(temp) % Did the user NOT give an empty figure number?
@@ -271,7 +277,7 @@ for ith_change = 1:length(fileContent)
 
 
 				% For debugging
-				if figNum~=-1
+				if ~isempty(figNum) && figNum~=-10
 					studentEmail = 'snb10+debug@psu.edu';
 				end
 
