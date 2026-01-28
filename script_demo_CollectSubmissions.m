@@ -125,6 +125,12 @@
 %
 % (new release)
 %
+% 2026_01_27 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_gatherSubmissionsIntoTable
+%   % * Fixed one situation where student entering bad number crashes the code
+%
+% (new release)
+
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu

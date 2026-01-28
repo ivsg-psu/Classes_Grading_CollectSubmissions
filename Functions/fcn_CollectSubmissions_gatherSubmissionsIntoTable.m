@@ -74,22 +74,16 @@ function ungradedSubmissionTable = ...
 %   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
 %   % * processes changes between cloud and local mirror, collecting all submissions that match
 %   %   % a user-defined assignment string. 
+%   % * Each submission is loaded and its
+%   %   % variables are copied into a table containing all the entries. NOTE:
+%   %   % this does not grade the entries, it merely collects all the data from
+%   %   % all students into the same structure.
+%
+% 2026_01_27 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_gatherSubmissionsIntoTable
+%   % * Fixed one situation where student entering bad number crashes the code
 
 
-%   Each submission is loaded and its
-%     variables are copied into a table containing all the entries. NOTE:
-%     this does not grade the entries, it merely collects all the data from
-%     all students into the same structure.
-
-
-%   % * This is a function that emails students to confirm submissions
-%   % * Lets users know that the file(s) were received 
-%   % * How it works:
-%   %   % * Loops through change list between cloud and local mirror, 
-%   %   % * Finds if any match an assignment string, 
-%   %   % * Checks if the user preferences indicate that confirmations are
-%   %   %   % desired.
-%   %   % * Sends confirmation emails to the associated emails 
 
 % TO-DO:
 %
@@ -263,116 +257,117 @@ for ith_change = 1:length(fileContent)
             studentNumberAtEnd = str2double(studentNumberStringAtEnd);
 
 
+			% Is this change well-formed?
+			if studentNumberAtEnd~=studentNumberAtStart
+				warning('Student folder number does not match submission number?!\n\tFolder number at start: %.0f\n\tStudent number on submission at end: %.0f\n', studentNumberAtStart, studentNumberAtEnd)
+				warning('Change to process was: \n\t%s\n',thisChangeCharArray);
+				warning('Skipping this student');
+			else
+				studentNumber = studentNumberAtStart;
 
-            if studentNumberAtEnd~=studentNumberAtStart
-                error('Student folder number does not match submission number?!\n\tFolder number: %.0f\n\tStudent number on submission: %.0f\n', studentNumberAtStart, studentNumberAtEnd)
-            end
+				%%%%%%%%%%%%
+				% Extract contents
+				fileToUnzip = fullfile(localFolder,sprintf('%07.0f',studentNumber), zipFileName);
 
-            studentNumber = studentNumberAtStart;
+				% Make sure file esists
+				if ~exist(fileToUnzip,'file')
+					error('Unable to find changed file in local directory. Seeking file: \n\t%s\n',fileToUnzip);
+				end
 
-            %%%%%%%%%%%%
-            % Extract contents
-            fileToUnzip = fullfile(localFolder,sprintf('%07.0f',studentNumber), zipFileName);
-
-            % Make sure file esists
-            if ~exist(fileToUnzip,'file')
-                error('Unable to find changed file in local directory. Seeking file: \n\t%s\n',fileToUnzip);
-            end
-            
-            % Make sure temp folder is empty
-            contentsInFolder = dir(fullfile(tempFolder,'*.*')); % Query temp folder        
-            filesInFolder = contentsInFolder(~[contentsInFolder.isdir]); % Filter out directories from the list
-
-
-            if ~isempty(filesInFolder)
-                currentFolder = pwd;
-                cd('Temp');
-                delete('*.*');
-                cd(currentFolder);
-            end
-            
-            % Unzip contents
-            unzip(fileToUnzip,tempFolder);
-
-            % Make sure 'localVariables.mat' is created
-            solutionsMatFile = fullfile(tempFolder,'localVariables.mat');
-            if ~exist(solutionsMatFile,'file')
-                error('Unable to find a localVAriables file in a zip extraction. Offending zip file: \n\t%s\n', fileToUnzip);
-            end
-
-            % Grab the variables
-            variableInfo = who('-file', solutionsMatFile);
-            load(solutionsMatFile, variableInfo{:});
-
-            % Save results
-            totalFound = totalFound+1;
-            ungradedSubmissionTable.('StudentNumber')(totalFound) = studentNumber;
-            for ith_variable = 1:length(variableInfo)
-                thisVariableName = variableInfo{ith_variable};
-                ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
-
-                % matchingIndex = strcmp(varNames,thisVariableName);
-                % if strcmp(varTypes{matchingIndex},'cell')
-                %     ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
-                % else
-                %     ungradedSubmissionTable.(thisVariableName)(totalFound) = eval(thisVariableName);
-                % end
-            end
+				% Make sure temp folder is empty
+				contentsInFolder = dir(fullfile(tempFolder,'*.*')); % Query temp folder
+				filesInFolder = contentsInFolder(~[contentsInFolder.isdir]); % Filter out directories from the list
 
 
+				if ~isempty(filesInFolder)
+					currentFolder = pwd;
+					cd('Temp');
+					delete('*.*');
+					cd(currentFolder);
+				end
+
+				% Unzip contents
+				unzip(fileToUnzip,tempFolder);
+
+				% Make sure 'localVariables.mat' is created
+				solutionsMatFile = fullfile(tempFolder,'localVariables.mat');
+				if ~exist(solutionsMatFile,'file')
+					error('Unable to find a localVAriables file in a zip extraction. Offending zip file: \n\t%s\n', fileToUnzip);
+				end
+
+				% Grab the variables
+				variableInfo = who('-file', solutionsMatFile);
+				load(solutionsMatFile, variableInfo{:});
+
+				% Save results
+				totalFound = totalFound+1;
+				ungradedSubmissionTable.('StudentNumber')(totalFound) = studentNumber;
+				for ith_variable = 1:length(variableInfo)
+					thisVariableName = variableInfo{ith_variable};
+					ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
+
+					% matchingIndex = strcmp(varNames,thisVariableName);
+					% if strcmp(varTypes{matchingIndex},'cell')
+					%     ungradedSubmissionTable.(thisVariableName)(totalFound) = {eval(thisVariableName)};
+					% else
+					%     ungradedSubmissionTable.(thisVariableName)(totalFound) = eval(thisVariableName);
+					% end
+				end
 
 
-            % % Get student details
-            % studentEmail = ungradedSubmissionTable.('PSUEmail'){studentRowNumber};
-            % studentName = ungradedSubmissionTable.('FullName'){studentRowNumber};
-            % 
-            % % For debugging
-            % if 1==1
-            %     studentEmail = 'snb10@psu.edu';
-            % end
-            % 
-            % entryAfterNumberString = extractAfter(changeToProcess, '/');
-            % 
-            % % Send email?
-            % thisStudentReceivedConfirmation = ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber);
-            % 
-            % if ~thisStudentReceivedConfirmation && notificationPreferences(studentRowNumber)
-            % 
-            %     recipient = studentEmail;
-            %     subject = sprintf('ME452: automated confirmation of assignment submission %s',assignmentString);
-            %     body = [...
-            %         sprintf('This email is being sent automatically by the ME452 assignment manager to confirm that the following submission was received:') 10 10 ...
-            %         sprintf('Assignment name: %s.',entryAfterNumberString) 10 ...
-            %         sprintf('Student number: %.0f.',studentNumberAtStart) 10 ...
-            %         sprintf('Student name: %s.',studentName) 10 ...
-            %         sprintf('Student email: %s.',studentEmail) 10 ...
-            %         ];
-            % 
-            %     % Attachments:
-            %     % if 1==0
-            %     % 	st = dbstack; %#ok<*UNRCH>
-            %     % 	scriptPath = which(st.file);
-            %     % 	scriptName = st.file;
-            %     % 	functionName = extractAfter(scriptName,'script_test_');
-            %     % 	functionPath = which(functionName);
-            %     % else
-            %     % 	scriptPath = which('script_test_fcn_LoadRoster_sendEmail');
-            %     % 	functionPath = which('fcn_LoadRoster_sendEmail');
-            %     % end
-            %     % attachments = {scriptPath, functionPath};
-            %     % fcn_LoadRoster_sendEmail( recipient, subject, body, attachments, (figNum))
-            % 
-            %     % Send the email
-            %     fcn_LoadRoster_sendEmail( recipient, subject, body,{})
-            %     ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber) = true;
-            % 
-            %     totalFound = totalFound+1;
-            % 
-            % 
-            % end
 
-        end % if statement for addition only
-    end % Ends if statement check for empty change and changes that contain assignment string
+
+				% % Get student details
+				% studentEmail = ungradedSubmissionTable.('PSUEmail'){studentRowNumber};
+				% studentName = ungradedSubmissionTable.('FullName'){studentRowNumber};
+				%
+				% % For debugging
+				% if 1==1
+				%     studentEmail = 'snb10@psu.edu';
+				% end
+				%
+				% entryAfterNumberString = extractAfter(changeToProcess, '/');
+				%
+				% % Send email?
+				% thisStudentReceivedConfirmation = ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber);
+				%
+				% if ~thisStudentReceivedConfirmation && notificationPreferences(studentRowNumber)
+				%
+				%     recipient = studentEmail;
+				%     subject = sprintf('ME452: automated confirmation of assignment submission %s',assignmentString);
+				%     body = [...
+				%         sprintf('This email is being sent automatically by the ME452 assignment manager to confirm that the following submission was received:') 10 10 ...
+				%         sprintf('Assignment name: %s.',entryAfterNumberString) 10 ...
+				%         sprintf('Student number: %.0f.',studentNumberAtStart) 10 ...
+				%         sprintf('Student name: %s.',studentName) 10 ...
+				%         sprintf('Student email: %s.',studentEmail) 10 ...
+				%         ];
+				%
+				%     % Attachments:
+				%     % if 1==0
+				%     % 	st = dbstack; %#ok<*UNRCH>
+				%     % 	scriptPath = which(st.file);
+				%     % 	scriptName = st.file;
+				%     % 	functionName = extractAfter(scriptName,'script_test_');
+				%     % 	functionPath = which(functionName);
+				%     % else
+				%     % 	scriptPath = which('script_test_fcn_LoadRoster_sendEmail');
+				%     % 	functionPath = which('fcn_LoadRoster_sendEmail');
+				%     % end
+				%     % attachments = {scriptPath, functionPath};
+				%     % fcn_LoadRoster_sendEmail( recipient, subject, body, attachments, (figNum))
+				%
+				%     % Send the email
+				%     fcn_LoadRoster_sendEmail( recipient, subject, body,{})
+				%     ungradedSubmissionTable.(emailVerificationColumnName)(studentRowNumber) = true;
+				%
+				%     totalFound = totalFound+1;
+				%
+				%
+				% end
+			end % Ends if test for well-formed change
+		end % if statement for addition only
+	end % Ends if statement check for empty change and changes that contain assignment string
 end
 
 % Delete empty rows
