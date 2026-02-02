@@ -91,6 +91,10 @@ function [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration]
 % 2026_02_01 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_downloadFolders
 %   % * If locked files are detected, deletes all of them
+%
+% 2026_02_02 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * Added error catching on rclone command to show critical errors
 
 
 % TO-DO:
@@ -258,6 +262,13 @@ if flagWasSuccessful
     cd(rcloneFolder);
     [status,cmdout] = system(rcloneCommand);
     cd(thisFolder);
+
+    % Make sure there are no critical errors
+    if contains(cmdout,'CRITICAL')
+        warning('backtrace','on');
+        warning('Encountered a critical error - must exit!\n\tError: %s\n',cmdout);
+        error('A critical error encountered in rclone. The error is listed above. Exiting!\n');
+    end
 
     % Read log file to determine changes
     % See: fcn_DebugTools_replaceStringInDirectory

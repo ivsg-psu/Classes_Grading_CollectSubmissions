@@ -148,6 +148,14 @@
 % 2026_02_02 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_setRcloneFolder
 %   % * Updated folder for E5-ME-L-SEBR12
+%
+% (new release)
+%
+% 2026_02_02 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * Added error catching on rclone command to show critical errors
+%
+% (new release)
 
 
 % TO-DO:
