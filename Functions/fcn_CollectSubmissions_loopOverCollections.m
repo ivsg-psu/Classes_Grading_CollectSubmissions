@@ -334,7 +334,9 @@ while thisTurn<exitCounter % One shot
 		processDuration = seconds(endTime - startTime);
 
 		% Call the function
-		fcn_CollectSubmissions_updateLog(logFile, endTime, processDuration, flagWasSuccessful, assignmentString, totalsCollected, (figNum))
+		fcn_CollectSubmissions_updateLog2(logFile, ...
+			endTime, processDuration, flagWasSuccessful, ...
+			assignmentString, totalsCollected, finalGradedRosterTable, (figNum))
 
 		rosterTable = finalGradedRosterTable;
 		updatedRosterTable = rosterTable;

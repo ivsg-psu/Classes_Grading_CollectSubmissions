@@ -156,7 +156,15 @@
 %   % * Added error catching on rclone command to show critical errors
 %
 % (new release)
-
+%
+% 2026_02_02 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog2
+%   % * Wrote the code originally, using fcn_CollectSubmissions_updateLog
+%   %   % as starter
+%   % * Added roster input to allow plotting (later) of percentage correct
+%   % * Updated plot output to auto-scale with number of students
+%
+% (new release)
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
