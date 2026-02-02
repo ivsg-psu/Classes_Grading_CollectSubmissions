@@ -80,6 +80,10 @@ function fcn_CollectSubmissions_updateLog(logFile, syncTime, processDuration, fl
 % - In fcn_CollectSubmissions_updateLog
 %   % * Removed unused function
 %   % * Removed debug supression comment that is now unneeded
+%
+% 2026_02_01 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_updateLog
+%   % * Improved fprint outputs
 
 % TO-DO:
 %

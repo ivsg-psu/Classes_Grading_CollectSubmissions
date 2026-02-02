@@ -87,11 +87,16 @@ function [fileContent, flagWasSuccessful, errorMsg, timeString, processDuration]
 % 2026_01_25 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_downloadFolders
 %   % * Added more detail to input arguments, for clarity
+%
+% 2026_02_01 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * If locked files are detected, deletes all of them
+
 
 % TO-DO:
 %
 % 2026_01_06 by Sean Brennan, sbrennan@psu.edu
-% - (fill in items here)
+% - Need to handle locked files better - throw major error if there are multiple locks in sequence
 
 
 

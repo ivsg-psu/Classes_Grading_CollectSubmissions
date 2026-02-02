@@ -130,7 +130,20 @@
 %   % * Fixed one situation where student entering bad number crashes the code
 %
 % (new release)
-
+%
+% 2026_02_01 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_downloadFolders
+%   % * If locked files are detected, deletes all of them
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Clears out locking file in rclone
+%   % * Adds assignment string to search criteria for archive counting
+% - In fcn_CollectSubmissions_updateLog
+%   % * Improved fprint outputs
+% - In the main demo code
+%   % * Removed script_test_all_functions and using DebugTools function
+%   %   % instead
+%
+% (new release)
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu
@@ -233,6 +246,15 @@ setenv('MATLABFLAG_PLOTROAD_REFERENCE_ALTITUDE','344.189');
 % plotting data
 setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LAT','-0.0000008');
 setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
+
+%% Check repo compliance?
+if 1==1
+	% Set input arguments
+	repoShortName = '_CollectSubmissions_';
+
+	% Call the function
+	fcn_DebugTools_testRepoForRelease(repoShortName, (2222));
+end
 
 %% Start of Demo Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

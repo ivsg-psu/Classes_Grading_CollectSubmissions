@@ -107,6 +107,11 @@ function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
 % - In fcn_CollectSubmissions_loopOverCollections
 %   % * Fixed bug where -1 was used to cause safeMode, causing errors with
 %   %   % fastMode. Fixed to use -10 instead.
+%
+% 2026_02_01 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Clears out locking file in rclone
+%   % * Adds assignment string to search criteria for archive counting
 
 
 % TO-DO:
@@ -263,10 +268,10 @@ while thisTurn<exitCounter % One shot
 		[fileContent, flagWasSuccessful, ~, timeString, ~] = ...
 			fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, startTime, (figNum));
 
-		% For debugging
-		if ~isequal(fileContent,"")
-			disp('Stop here');
-		end
+		% % For debugging
+		% if ~isequal(fileContent,"")
+		% 	disp('Stop here');
+		% end
 
 		%%%% fcn_CollectSubmissions_archiveChanges
 		fprintf(1,'Archiving submissions.\n');
@@ -293,10 +298,10 @@ while thisTurn<exitCounter % One shot
 		%%%% fcn_CollectSubmissions_gradeAssignment
 		fprintf(1,'Grading submissions.\n');
 
-		% For debugging
-		if ~isempty(ungradedSubmissionTable)
-			disp('Stop here');
-		end
+		% % For debugging
+		% if ~isempty(ungradedSubmissionTable)
+		% 	disp('Stop here');
+		% end
 
 		%  Call the function
 		gradedRosterTable = ...

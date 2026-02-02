@@ -58,7 +58,8 @@ function fcn_DebugTools_autoInstallRepos(...
 %
 %      dependencySubfolders: in addition to the package subfoder, a list
 %      of any specified sub-subfolders to the MATLAB path. Leave blank to
-%      add only the package subfolder to the path. See the example below.
+%      add only the package subfolder to the path. See the example in the
+%      test script.
 %
 %      (OPTIONAL INPUTS)
 %
@@ -129,10 +130,14 @@ function fcn_DebugTools_autoInstallRepos(...
 %   %   % finder keeps files that have only extensions but no name, like
 %   %   % ".something". Similarly, all rmdir commands require 's' for
 %   %   % sequential removes because MAC folders may contain subfolders
+% 
+% 2026_01_25 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_DebugTools_autoInstallRepos
+%   % * Fixed bug on line 343 where utilities_dir variable called but not
+%   %   % defined. Now directoryPath variable used
+%   % * Added input checking
 
 % TO-DO:
-% - 2025_11_12 by Sean Brennan, sbrennan@psu.edu
-%    % * Add input checking
 % - Would like to have the following functionality:
 % During the install, the packages needed for each dependency are also
 % checked and added to the dependency list. Thus, if a dependency that is
@@ -193,13 +198,26 @@ if 0 == flag_max_speed
         % Are there the right number of inputs?
         narginchk(2,MAX_NARGIN);
 
-        % if nargin>=2
-        %     % Check the variableTypeString input, make sure it is characters
-        %     if ~ischar(variableTypeString)
-        %         error('The variableTypeString input must be a character type, for example: ''Path'' ');
-        %     end
-        % end
+		% Check the dependencyURLs to be sure it is a text style or cell
+		% string
+		if ~iscell(dependencyURLs)
+			if ~ischar(dependencyURLs) && ~isstring(dependencyURLs)
+				warning('backtrace','on');
+				warning('Unrecognized type for input argument dependencyURLs. Must exit.');
+				error('Unable to recognize dependencyURLs input. Expecting a character or string, but type was neither. Exiting');
+			end
+		end
+		
+		% Check the dependencySubfolders to be sure it is empty or cell
+		if ~iscell(dependencySubfolders)
+			if ~isempty(dependencySubfolders)
+				warning('backtrace','on');
+				warning('Unrecognized type for input argument dependencySubfolders. Must exit.');
+				error('Unable to recognize dependency subfolder input. Exiting');
+			end
 
+		end
+		
     end
 end
 
@@ -340,7 +358,7 @@ for ith_repo = 1:length(orderedListOfRequestedInstalls)
             if 0==status
                 warning('backtrace','on');
                 warning('Attempted to remove a directory but encountered error.');
-                error('Unable remove directory: %s \nReason message: %s \nand message_ID: %s\n',utilities_dir, message,message_ID);
+                error('Unable remove directory: %s \nReason message: %s \nand message_ID: %s\n',directoryPath, message,message_ID);
             else
                 fprintf(1,'Done.\n');
             end
