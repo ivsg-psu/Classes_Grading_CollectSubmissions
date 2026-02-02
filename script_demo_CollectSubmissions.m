@@ -144,6 +144,11 @@
 %   %   % instead
 %
 % (new release)
+%
+% 2026_02_02 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_setRcloneFolder
+%   % * Updated folder for E5-ME-L-SEBR12
+
 
 % TO-DO:
 % - 2026_01_09 by Sean Brennan, sbrennan@psu.edu

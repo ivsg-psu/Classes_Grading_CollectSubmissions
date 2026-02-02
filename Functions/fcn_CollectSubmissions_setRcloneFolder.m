@@ -42,6 +42,10 @@ function rcloneFolder = fcn_CollectSubmissions_setRcloneFolder(varargin)
 % 2026_01_19 by Sean Brennan, sbrennan@psu.edu
 % - In fcn_CollectSubmissions_setRcloneFolder
 %   % * Updated folder for E5-ME-L-SEBR17
+%
+% 2026_02_02 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_setRcloneFolder
+%   % * Updated folder for E5-ME-L-SEBR12
 
 % TO-DO:
 %
@@ -176,6 +180,8 @@ switch(thisComputer)
 		rcloneFolder = 'C:\rclone';
     case 'E5-ME-SEBR02'
 		rcloneFolder = 'C:\rclone\rclone-v1.72.1-windows-amd64';
+    case 'E5-ME-L-SEBR12'
+		rcloneFolder = 'C:\rclone-v1.68.1-windows-amd64';        
 	case 'E5-ME-L-SEBR17'
 		rcloneFolder = 'C:\rclone-v1.68.2-windows-amd64';
 	otherwise
