@@ -241,7 +241,7 @@ writelines(line_of_data, logFile, WriteMode="append")
 %                           |___/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if flag_do_plots
-	fprintf(1,'File line result: \n\t%s\n', line_of_data);
+	fprintf(1,'File line result in logfile %s: \n\t%s\n', logFile, line_of_data);
 
 	% Plot the logfile
 	% Detect options and set types (example: make "Date" datetime, "ID" categorical)

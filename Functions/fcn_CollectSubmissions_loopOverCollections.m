@@ -241,12 +241,21 @@ while thisTurn<exitCounter % One shot
 	if exist('blockingFile.txt','file')
 		fprintf(1, 'Process is being blocked ... waiting.\n');
 	else
-		% Create a blocking file
+		% Create a blocking file in MATLAB folder
 		fcn_DebugTools_fileTouch('blockingFile.txt');
 
 		%%%% fcn_CollectSubmissions_downloadFolders
 		fprintf(1,'Downloading the class submissions from the cloud.\n');
 		% figure(figNum); clf;
+
+		% Check for locking folder in rclone
+		queryPath = fullfile(rcloneFolder,'lock*.txt');
+		results = dir(queryPath);
+
+		if ~isempty(results)
+			fprintf(1,'A previous lock, %s, was found in the folder: %s. Clearing it.',results(1).name, rcloneFolder);
+			delete(queryPath);
+		end
 
 		startTime = datetime('now');
 
@@ -254,9 +263,14 @@ while thisTurn<exitCounter % One shot
 		[fileContent, flagWasSuccessful, ~, timeString, ~] = ...
 			fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, startTime, (figNum));
 
+		% For debugging
+		if ~isequal(fileContent,"")
+			disp('Stop here');
+		end
+
 		%%%% fcn_CollectSubmissions_archiveChanges
 		fprintf(1,'Archiving submissions.\n');
-		subFolderArchive = [];
+		subFolderArchive = assignmentString; % [];
 		flagArchiveEqualFiles = [];
 
 		%%%%%%%%%%
@@ -278,6 +292,11 @@ while thisTurn<exitCounter % One shot
 
 		%%%% fcn_CollectSubmissions_gradeAssignment
 		fprintf(1,'Grading submissions.\n');
+
+		% For debugging
+		if ~isempty(ungradedSubmissionTable)
+			disp('Stop here');
+		end
 
 		%  Call the function
 		gradedRosterTable = ...

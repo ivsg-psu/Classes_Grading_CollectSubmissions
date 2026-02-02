@@ -263,7 +263,8 @@ if flagWasSuccessful
     delete(logFilePath);
 
     % Remove lock time file, releasing command to be run again
-    delete(lockFilePath);
+	allLockFiles = fullfile(rcloneFolder,'lock_*.txt');
+    delete(allLockFiles);
 
     if 0~=status
         flagWasSuccessful = false;
