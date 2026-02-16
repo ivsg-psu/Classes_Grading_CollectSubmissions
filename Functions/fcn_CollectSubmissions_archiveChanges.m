@@ -207,44 +207,70 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Initialize counts
-totalSame = 0;
-totalAdded = 0;
-totalDeleted = 0;
-totalModified = 0;
-totalErrored = 0;
+% Initialize counts and numbers
+studentNumbers = [];
+
+flagsStudentStatus = [];
 
 for ith_change = 1:length(fileContent)
     thisChange = fileContent(ith_change);
     thisChangeChar = char(thisChange);
+    thisStudentNumberChars = extractBefore(thisChangeChar(3:end),'/');
+    thisStudentNumber = str2double(thisStudentNumberChars);
+
+    % Is this number already there?
+    if ~any(studentNumbers==thisStudentNumber)
+        studentNumbers(end+1,1) = thisStudentNumber; %#ok<AGROW>
+        flagsStudentStatus(end+1,1) = 0; %#ok<AGROW>
+    end
+
+    % Pull student index
+    thisStudentIndex = find(studentNumbers==thisStudentNumber);
+    if isempty(thisStudentIndex) || length(thisStudentIndex)>1
+        error('Unable to find unique student index');
+    end
+
     if ~isempty(thisChangeChar)
         if length(thisChangeChar)>2 && contains(thisChangeChar,subFolder)
             changeToProcess = thisChangeChar(3:end);
             switch thisChangeChar(1)
                 case '='
-                    totalSame = totalSame+1;
                     % No change in file
                     if flagArchiveEqualFiles
                         suffixString = cat(2,timeString,'_eq');
                         fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
                     end
                 case '-'
+                    if ~isnan(flagsStudentStatus(thisStudentIndex,1))
+                        flagsStudentStatus(thisStudentIndex,1) = -1; %#ok<AGROW>
+                    end
+
                     % Removal of file
                     totalDeleted = totalDeleted+1;
                     suffixString = cat(2,timeString,'_rem');
                     fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
+
                 case '+'
+                    if 0==flagsStudentStatus(thisStudentIndex,1)
+                        flagsStudentStatus(thisStudentIndex,1) = -1; %#ok<AGROW>
+                    end
+
                     % Addition of file
                     totalAdded = totalAdded+1;
                     suffixString = cat(2,timeString,'_add');
                     fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
                 case '*'
+                    if 0==flagsStudentStatus(thisStudentIndex,1)
+                        flagsStudentStatus(thisStudentIndex,1) = 2; %#ok<AGROW>
+                    end
                     % Modification of file
                     totalModified = totalModified+1;
                     suffixString = cat(2,timeString,'_mod');
                     fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
                 case '!'
-                    % Error in file
+                    flagsStudentStatus(thisStudentIndex,1) = nan; %#ok<AGROW>
+
+                        % Error in file
                     totalErrored = totalErrored+1;
                     suffixString = cat(2,timeString,'_err');
                     fcn_INTERNAL_processChange( changeToProcess, localFolder, archiveFolder, suffixString);
@@ -257,11 +283,11 @@ for ith_change = 1:length(fileContent)
     end % Ends check for empty character
 end
 
-totalsCollected.totalSame     = totalSame;
-totalsCollected.totalDeleted  = totalDeleted;
-totalsCollected.totalAdded    = totalAdded;
-totalsCollected.totalModified = totalModified;
-totalsCollected.totalErrored  = totalErrored;
+totalsCollected.totalSame     = sum(flagsStudentStatus==0);
+totalsCollected.totalDeleted  = sum(flagsStudentStatus==-1);
+totalsCollected.totalAdded    = sum(flagsStudentStatus==1);
+totalsCollected.totalModified = sum(flagsStudentStatus==2);
+totalsCollected.totalErrored  = sum(isnan(flagsStudentStatus));
 
 
 %% Plot the results (for debugging)?
