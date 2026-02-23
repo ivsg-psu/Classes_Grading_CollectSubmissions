@@ -112,7 +112,10 @@ function updatedRosterTable = fcn_CollectSubmissions_loopOverCollections(...
 % - In fcn_CollectSubmissions_loopOverCollections
 %   % * Clears out locking file in rclone
 %   % * Adds assignment string to search criteria for archive counting
-
+%
+% 2026_02_20 by Sean Brennan, sbrennan@psu.edu
+% - In fcn_CollectSubmissions_loopOverCollections
+%   % * Update of acceptance of grading provisions
 
 % TO-DO:
 %
