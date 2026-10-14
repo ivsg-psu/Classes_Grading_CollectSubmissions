@@ -212,29 +212,37 @@ studentNumbers = [];
 
 flagsStudentStatus = [];
 
+% Initialize values
+totalDeleted = 0;
+totalAdded = 0;
+totalModified = 0;
+totalErrored = 0;
+
 for ith_change = 1:length(fileContent)
     thisChange = fileContent(ith_change);
-    thisChangeChar = char(thisChange);
-    thisStudentNumberChars = extractBefore(thisChangeChar(3:end),'/');
-    thisStudentNumber = str2double(thisStudentNumberChars);
+	thisChangeChar = char(thisChange);
 
-    % Is this number already there?
-    if ~any(studentNumbers==thisStudentNumber)
-        studentNumbers(end+1,1) = thisStudentNumber; %#ok<AGROW>
-        flagsStudentStatus(end+1,1) = 0; %#ok<AGROW>
-    end
+	if ~isempty(thisChangeChar)
+		thisStudentNumberChars = extractBefore(thisChangeChar(3:end),'/');
+		thisStudentNumber = str2double(thisStudentNumberChars);
 
-    % Pull student index
-    thisStudentIndex = find(studentNumbers==thisStudentNumber);
-    if isempty(thisStudentIndex) || length(thisStudentIndex)>1
-        error('Unable to find unique student index');
-    end
+		% Is this number already there?
+		if ~any(studentNumbers==thisStudentNumber)
+			studentNumbers(end+1,1) = thisStudentNumber; %#ok<AGROW>
+			flagsStudentStatus(end+1,1) = 0; %#ok<AGROW>
+		end
 
-    if ~isempty(thisChangeChar)
-        if length(thisChangeChar)>2 && contains(thisChangeChar,subFolder)
-            changeToProcess = thisChangeChar(3:end);
-            switch thisChangeChar(1)
-                case '='
+		% Pull student index
+		thisStudentIndex = find(studentNumbers==thisStudentNumber);
+		if isempty(thisStudentIndex) || length(thisStudentIndex)>1
+			error('Unable to find unique student index');
+		end
+
+
+		if length(thisChangeChar)>2 && contains(thisChangeChar,subFolder)
+			changeToProcess = thisChangeChar(3:end);
+			switch thisChangeChar(1)
+				case '='
                     % No change in file
                     if flagArchiveEqualFiles
                         suffixString = cat(2,timeString,'_eq');
@@ -252,7 +260,7 @@ for ith_change = 1:length(fileContent)
 
                 case '+'
                     if 0==flagsStudentStatus(thisStudentIndex,1)
-                        flagsStudentStatus(thisStudentIndex,1) = -1; %#ok<AGROW>
+                        flagsStudentStatus(thisStudentIndex,1) = 1; %#ok<AGROW>
                     end
 
                     % Addition of file

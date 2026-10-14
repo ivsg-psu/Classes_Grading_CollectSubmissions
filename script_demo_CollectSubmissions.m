@@ -269,7 +269,7 @@ setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LAT','-0.0000008');
 setenv('MATLABFLAG_PLOTROAD_ALIGNMATLABLLAPLOTTINGIMAGES_LON','0.0000054');
 
 %% Check repo compliance?
-if 1==1
+if 1==0
 	% Set input arguments
 	repoShortName = '_CollectSubmissions_';
 
@@ -295,11 +295,13 @@ disp('Welcome to the demo code for the CollectSubmissions library!')
 
 %% Create test folders?
 % Done once
-if 1==1
+if 1==0
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%
 	fprintf(1,'Loading the class roster.\n');
-	CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
+	% CSVPath = fullfile(cd,'Data','roster_2026_01_19.csv');
+	CSVPath = fullfile(cd,'Data','roster_2026_09_04b.csv');
+	
 	emailForAddedTestStudents = 'snb10@psu.edu';
 	rosterTable = fcn_LoadRoster_rosterTableFromCSV(CSVPath, (emailForAddedTestStudents), (1));
 
@@ -361,9 +363,12 @@ localFolder = fullfile(pwd,'Data','CloudMirror');
 archiveFolder = fullfile(pwd,'Data','Archive');
 subFolderArchive = [];
 flagArchiveEqualFiles = [];
-assignmentFileString = 'SUBMISSION_Week01_HW01_';
+% SUBMISSION_Week06_EXAM1_7085227
+% assignmentFileString = 'SUBMISSION_Week01_HW01_';
+assignmentFileString = 'SUBMISSION_Week06_EXAM1';
 gradingFunction = @fcn_INTERNAL_gradeAssignment;
-assignmentString = 'Week01_HW01';
+% assignmentString = 'Week01_HW01';
+assignmentString = 'Week06_EXAM1';
 logFile     = fullfile(pwd,'Data','logFile.csv');
 logSubFolder = '';
 figNum = 10001;
@@ -374,6 +379,7 @@ if exist('blockingFile.txt','file')
 	delete('blockingFile.txt');
 end
 
+ith_turn = 1; 
 while 1==1
 	clc;
 	fprintf(1, '\nSTARTING TURN: %.0f\n', ith_turn);
@@ -393,7 +399,7 @@ while 1==1
 		[fileContent, flagWasSuccessful, errorMsg, timeString, ~] = ...
 			fcn_CollectSubmissions_downloadFolders(rcloneFolder, cloudFolder, localFolder, startTime, (figNum));
 
-		%%%% fcn_CollectSubmissions_archiveChanges
+		%% fcn_CollectSubmissions_archiveChanges
 		fprintf(1,'Archiving submissions.\n');
 
 		%%%%%%%%%%
@@ -403,7 +409,7 @@ while 1==1
 			fileContent, localFolder, archiveFolder, timeString, ...
 			(subFolderArchive), (flagArchiveEqualFiles), (figNum));
 
-		%%%% fcn_CollectSubmissions_gatherSubmissionsIntoTable
+		%% fcn_CollectSubmissions_gatherSubmissionsIntoTable
 		fprintf(1,'Gathering submissions.\n');
 
 
@@ -412,7 +418,7 @@ while 1==1
 		ungradedSubmissionTable = ...
 			fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentFileString, localFolder, (figNum));
 
-		%%%% fcn_CollectSubmissions_gradeAssignment
+		%% fcn_CollectSubmissions_gradeAssignment
 		fprintf(1,'Grading submissions.\n');
 
 		%  Call the function
@@ -420,7 +426,7 @@ while 1==1
 			fcn_CollectSubmissions_gradeAssignment(assignmentString, rosterTable, ungradedSubmissionTable, gradingFunction, (figNum));
 
 
-		%%%% fcn_CollectSubmissions_confirmSubmissions
+		%% fcn_CollectSubmissions_confirmSubmissions
 		fprintf(1,'Confirming submissions.\n');
 
 		%%%%%%%%%%
@@ -458,6 +464,7 @@ while 1==1
 	end % Ends check for blocking file
 	
 	pause(10);
+	ith_turn = ith_turn+1;
 end
 
 %% Functions follow

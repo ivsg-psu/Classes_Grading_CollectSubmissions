@@ -1,5 +1,5 @@
 function ungradedSubmissionTable = ...
-    fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, varargin)
+	fcn_CollectSubmissions_gatherSubmissionsIntoTable(fileContent, assignmentString, localFolder, varargin)
 
 %% fcn_CollectSubmissions_gatherSubmissionsIntoTable
 %     fcn_CollectSubmissions_gatherSubmissionsIntoTable processes changes
@@ -73,7 +73,7 @@ function ungradedSubmissionTable = ...
 % - Wrote fcn_CollectSubmissions_gatherSubmissionsIntoTable
 %   % * Used fcn_CollectSubmissions_confirmSubmissions as starter
 %   % * processes changes between cloud and local mirror, collecting all submissions that match
-%   %   % a user-defined assignment string. 
+%   %   % a user-defined assignment string.
 %   % * Each submission is loaded and its
 %   %   % variables are copied into a table containing all the entries. NOTE:
 %   %   % this does not grade the entries, it merely collects all the data from
@@ -149,10 +149,10 @@ if 0==flag_max_speed
 		fcn_DebugTools_checkInputsToFunctions(assignmentString, '_of_char_strings');
 
 		% Check the localFolder to be sure it is a string or char and a
-        % folder
+		% folder
 		fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
-        fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
-        
+		fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
+
 		% Check the assignmentString to be sure it is a text style and a folder
 		% fcn_DebugTools_checkInputsToFunctions(localFolder, '_of_char_strings');
 		% fcn_DebugTools_checkInputsToFunctions(localFolder, 'DoesDirectoryExist');
@@ -169,7 +169,7 @@ end
 
 
 % % The following area checks for variable argument inputs (varargin)
-% 
+%
 % % Does the user want to specify the assignmentString input?
 % % Set defaults first:
 % assignmentString = 'SUBMISSION';
@@ -219,7 +219,7 @@ end
 % Check and prep folder
 tempFolder = fullfile(pwd,'Temp');
 if ~exist(tempFolder,'dir')
-    fcn_DebugTools_makeDirectory(tempFolder);
+	fcn_DebugTools_makeDirectory(tempFolder);
 end
 
 % Create a table with 1000 rows to start. We'll delete empty ones later
@@ -240,21 +240,26 @@ totalFound = 0;
 % the student info from the change, and then email the student to confirm.
 for ith_change = 1:length(fileContent)
 	thisChange = fileContent(ith_change);
-    thisChangeCharArray = char(thisChange);
-    if ~isempty(thisChangeCharArray) && contains(thisChangeCharArray,assignmentString)
-        changeToProcess = thisChangeCharArray(3:end);
-        if any(strcmp(thisChangeCharArray(1),changesToLog))  
+	thisChangeCharArray = char(thisChange);
+	if ~isempty(thisChangeCharArray) && contains(thisChangeCharArray,assignmentString)
 
-            % Extract the student number at start
-            studentNumberStringAtStart = extractBefore(changeToProcess,'/');            
-            studentNumberAtStart = str2double(studentNumberStringAtStart);
+		% Remove leading spaces
+		changeToProcess = thisChangeCharArray(3:end);
 
-            % Extract zip file name
-            zipFileName = extractAfter(changeToProcess,'/');
+		% Does this string contain any of the changes that need to be
+		% processed? And is it NOT a text file?
+		if any(strcmp(thisChangeCharArray(1),changesToLog)) && ~contains(changeToProcess,'.txt')
 
-            % Extract the student number at end
-            studentNumberStringAtEnd = extractBetween(zipFileName,assignmentString,'.zip');
-            studentNumberAtEnd = str2double(studentNumberStringAtEnd);
+			% Extract the student number at start
+			studentNumberStringAtStart = extractBefore(changeToProcess,'/');
+			studentNumberAtStart = str2double(studentNumberStringAtStart);
+
+			% Extract zip file name
+			zipFileName = extractAfter(changeToProcess,'/');
+
+			% Extract the student number at end
+			studentNumberStringAtEnd = extractBetween(zipFileName,cat(2,assignmentString,'_'),'.zip');
+			studentNumberAtEnd = str2double(studentNumberStringAtEnd);
 
 
 			% Is this change well-formed?
@@ -287,7 +292,11 @@ for ith_change = 1:length(fileContent)
 				end
 
 				% Unzip contents
-				unzip(fileToUnzip,tempFolder);
+				try
+					unzip(fileToUnzip,tempFolder);
+				catch
+					disp('stop here');
+				end
 
 				% Make sure 'localVariables.mat' is created
 				solutionsMatFile = fullfile(tempFolder,'localVariables.mat');
